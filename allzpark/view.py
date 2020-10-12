@@ -78,6 +78,7 @@ class Window(QtWidgets.QMainWindow):
 
         # The order is reflected in the UI
         docks = odict((
+            ("profiles", dock.Profiles(ctrl)),
             ("app", dock.App(ctrl)),
             ("packages", dock.Packages(ctrl)),
             ("context", dock.Context(ctrl)),
@@ -182,7 +183,10 @@ class Window(QtWidgets.QMainWindow):
         layout.setSpacing(0)
 
         for name, widget in docks.items():
-            toggle = QtWidgets.QPushButton()
+            has_menu = hasattr(widget, "on_context_menu")
+            BtnCls = (dock.PushButtonWithMenu
+                      if has_menu else QtWidgets.QPushButton)
+            toggle = BtnCls()
             toggle.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
                                  QtWidgets.QSizePolicy.Expanding)
             toggle.setObjectName(name + "Toggle")
@@ -202,6 +206,10 @@ class Window(QtWidgets.QMainWindow):
                 toggle.setChecked(widget.isVisible())
 
             toggle.clicked.connect(partial(on_toggled, widget, toggle))
+
+            if has_menu:
+                toggle.customContextMenuRequested.connect(
+                    widget.on_context_menu(self))
 
             # Store reference for showEvent
             widget.toggle = toggle
@@ -595,6 +603,9 @@ class Window(QtWidgets.QMainWindow):
         button = self._widgets["profileBtn"]
         button.setIcon(res.icon(icon))
 
+        toggle = self._docks["profiles"].toggle
+        toggle.setIcon(res.icon(icon))
+
         # Determine aspect ratio
         height = px(32)
         pixmap = res.pixmap(icon)
@@ -607,6 +618,9 @@ class Window(QtWidgets.QMainWindow):
 
         button.setIconSize(QtCore.QSize(width, height))
         button.setAutoFillBackground(True)
+
+        toggle.setIconSize(QtCore.QSize(width, height))
+        toggle.setAutoFillBackground(True)
 
     def setStyleSheet(self, style):
         style = style % {

@@ -39,20 +39,21 @@ requires = [
     "python",
 ]
 
-build_command = "python -c \"%s\"" % """
-from os import environ
-from subprocess import check_call, PIPE
-i = bool('{install}')
-d = environ['REZ_BUILD_INSTALL_PATH'] if i else environ['REZ_BUILD_PATH']
-check_call(['python', 'setup.py', 'build', '--build-base', d], cwd=r'{root}')
-""".strip().replace("\n", ";")
+# build_command = "python -c \"%s\"" % """
+# from os import environ
+# from subprocess import check_call, PIPE
+# i = bool('{install}')
+# d = environ['REZ_BUILD_INSTALL_PATH'] if i else environ['REZ_BUILD_PATH']
+# check_call(['python', 'setup.py', 'build', '--build-base', d], cwd=r'{root}')
+# """.strip().replace("\n", ";")
+build_command = False
 
 
 def commands():
     env = globals()["env"]
     alias = globals()["alias"]
 
-    env.PYTHONPATH.prepend("{root}/lib")
+    env.PYTHONPATH.prepend("C:/Users/davidlatwe.lai/pipeline/allzpark")
 
     alias("allzpark", "python -m allzpark")
     alias("park", "python -m allzpark")

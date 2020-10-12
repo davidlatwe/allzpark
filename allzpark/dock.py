@@ -1376,3 +1376,71 @@ class CssHighlighter(QtGui.QSyntaxHighlighter):
             )
             startIndex = self.comment_start_exp.indexIn(
                 text, startIndex + commentLength)
+
+
+class ProfileView(QtWidgets.QWidget):
+
+    def __init__(self, parent=None):
+        super(ProfileView, self).__init__(parent)
+
+
+class Profiles(AbstractDockWidget):
+    """
+    TODO:
+        Favorite treeview
+        -----------------------
+        Refresh btn, Search bar
+        Profile treeview (show version column if advance enabled)
+    """
+
+    icon = "Default_Profile"
+
+    def __init__(self, ctrl, parent=None):
+        super(Profiles, self).__init__("Profiles", parent)
+        self.setAttribute(QtCore.Qt.WA_StyledBackground)
+        self.setObjectName("Profiles")
+
+        panels = {
+            "central": QtWidgets.QWidget()
+        }
+
+        widgets = {
+            "favorite": QtWidgets.QTreeView(),
+            "profiles": ProfileView(),
+        }
+
+        layout = QtWidgets.QVBoxLayout(panels["central"])
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(widgets["favorite"])
+        layout.addWidget(widgets["profiles"])
+
+        self._widgets = widgets
+
+        self.setWidget(panels["central"])
+
+    def set_model(self, model_):
+        pass
+
+    def on_context_menu(self, window):
+        def _on_context_menu(*args):
+            name = window._widgets["profileName"].text()
+
+            menu = MenuWithTooltip(window)
+            separator = QtWidgets.QWidgetAction(menu)
+            separator.setDefaultWidget(QtWidgets.QLabel(name))
+            menu.addAction(separator)
+
+            def on_reset():
+                window.reset()
+
+            reset = QtWidgets.QAction("Reset", menu)
+            reset.triggered.connect(on_reset)
+            reset.setToolTip("Re-scan repository for new Rez packages")
+            menu.addAction(reset)
+
+            menu.addSeparator()
+
+            menu.move(QtGui.QCursor.pos())
+            menu.show()
+
+        return _on_context_menu
