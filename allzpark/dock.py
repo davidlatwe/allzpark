@@ -68,7 +68,7 @@ class AbstractDockWidget(QtWidgets.QDockWidget):
 
 
 class App(AbstractDockWidget):
-    """Aggregated information about the currently selected profile"""
+    """Aggregated information about the currently selected application"""
 
     icon = "Alert_Info_32"
 
@@ -1378,20 +1378,14 @@ class CssHighlighter(QtGui.QSyntaxHighlighter):
                 text, startIndex + commentLength)
 
 
-class ProfileView(QtWidgets.QWidget):
+class ProfileView(QtWidgets.QTreeView):
 
     def __init__(self, parent=None):
         super(ProfileView, self).__init__(parent)
 
 
 class Profiles(AbstractDockWidget):
-    """
-    TODO:
-        Favorite treeview
-        -----------------------
-        Refresh btn, Search bar
-        Profile treeview (show version column if advance enabled)
-    """
+    """Listing and changing profiles with detailed info"""
 
     icon = "Default_Profile"
 
@@ -1401,18 +1395,46 @@ class Profiles(AbstractDockWidget):
         self.setObjectName("Profiles")
 
         panels = {
-            "central": QtWidgets.QWidget()
+            "central": QtWidgets.QWidget(),
         }
 
         widgets = {
-            "favorite": QtWidgets.QTreeView(),
-            "profiles": ProfileView(),
+            # filter bar
+            "controls": QtWidgets.QWidget(),
+            "refresh": QtWidgets.QPushButton("Q"),
+            "search": QtWidgets.QLineEdit(),
+            # profile treeview
+            "view": ProfileView(),
+            # selected profile details
+            "selected": QtWidgets.QWidget(),
+            "icon": QtWidgets.QLabel(),
+            "name": QtWidgets.QLabel("My_Profile_Full_Name"),
+            "details": QtWidgets.QWidget(),
+            "info": QtWidgets.QTreeView(),
         }
 
-        layout = QtWidgets.QVBoxLayout(panels["central"])
+        layout = QtWidgets.QHBoxLayout(widgets["controls"])
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(widgets["favorite"])
-        layout.addWidget(widgets["profiles"])
+        layout.addWidget(widgets["refresh"])
+        layout.addWidget(widgets["search"])
+
+        layout = QtWidgets.QHBoxLayout(widgets["selected"])
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(widgets["icon"])
+        layout.addWidget(widgets["name"], stretch=True)
+
+        layout = QtWidgets.QVBoxLayout(widgets["details"])
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(widgets["selected"])
+        layout.addWidget(widgets["info"])
+
+        layout = QtWidgets.QVBoxLayout(panels["central"])
+        layout.setContentsMargins(6, 0, 6, 0)
+        layout.addWidget(widgets["controls"])
+        layout.addWidget(widgets["view"], stretch=True)
+        layout.addWidget(widgets["details"])
+
+        widgets["icon"].setPixmap(res.pixmap("File_Query_32"))
 
         self._widgets = widgets
 
