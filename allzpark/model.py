@@ -41,7 +41,7 @@ import itertools
 from . import allzparkconfig, util, resources as res
 from . import _rezapi as rez
 
-from .vendor.Qt import QtCore, QtGui, QtCompat
+from .vendor.Qt import Qt, QtCore, QtGui, QtCompat
 from .vendor import qjsonmodel, six
 
 # Optional third-party dependencies
@@ -676,8 +676,20 @@ class TreeItem(dict):
         self._children = list()
         self._parent = None
 
-    def childCount(self):
-        return len(self._children)
+    def walk(self):
+        for i in self._children:
+            yield i
+        for i in self._children:
+            for j in i.walk():
+                yield j
+
+    def row(self):
+        if self._parent is not None:
+            siblings = self.parent().children()
+            return siblings.index(self)
+
+    def parent(self):
+        return self._parent
 
     def child(self, row):
         if row >= len(self._children):
@@ -688,24 +700,123 @@ class TreeItem(dict):
     def children(self):
         return self._children
 
-    def parent(self):
-        return self._parent
-
-    def row(self):
-        if self._parent is not None:
-            siblings = self.parent().children()
-            return siblings.index(self)
+    def childCount(self):
+        return len(self._children)
 
     def add_child(self, child):
         child._parent = self
         self._children.append(child)
 
 
-class TreeModel(AbstractTableModel):
-    pass
+class AbstractTreeModel(QtCore.QAbstractItemModel):
+    ColumnToKey = {}
+    Headers = []
+
+    def __init__(self, parent=None):
+        super(AbstractTreeModel, self).__init__(parent)
+        self.root = TreeItem()
+
+    def reset(self, items=None):
+        pass
+
+    def find(self, name):
+        return next(i for i in self.root.walk() if i.get("name") == name)
+
+    def findIndex(self, name):
+        return self.createIndex(
+            self.find(name).row(), 0, QtCore.QModelIndex()
+        )
+
+    def rowCount(self, parent=QtCore.QModelIndex()):
+        if parent.isValid():
+            item = parent.internalPointer()
+        else:
+            item = self.root
+
+        return item.childCount()
+
+    def columnCount(self, parent):
+        return len(self.ColumnToKey)
+
+    def index(self, row, column, parent):
+        if not parent.isValid():
+            parent_item = self.root
+        else:
+            parent_item = parent.internalPointer()
+
+        child_item = parent_item.child(row)
+        if child_item:
+            return self.createIndex(row, column, child_item)
+        else:
+            return QtCore.QModelIndex()
+
+    def headerData(self, section, orientation, role):
+        if orientation == QtCore.Qt.Vertical:
+            return
+
+        if role == QtCore.Qt.DisplayRole:
+            return self.Headers[section]
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+
+        item = index.internalPointer()
+        col = index.column()
+
+        try:
+            value = item[role]
+
+            if isinstance(value, list):
+                # Prevent edits
+                value = value[:]
+
+            return value
+
+        except KeyError:
+            try:
+                key = self.ColumnToKey[col][role]
+            except KeyError:
+                return None
+
+        return item[key]
+
+    def setData(self, index, value, role=QtCore.Qt.EditRole):
+        if index.isValid():
+            item = index.internalPointer()
+            col = index.column()
+
+            try:
+                item[role] = value
+            except KeyError:
+                key = self.ColumnToKey[col][role]
+                item[key] = value
+
+            roles = [role] if isinstance(role, int) else []
+            QtCompat.dataChanged(self, index, index, roles)
+
+            return True
+
+        return False
+
+    def parent(self, index):
+        item = index.internalPointer()
+        parent_item = item.parent()
+
+        # If it has no parents we return invalid
+        if parent_item == self.root or not parent_item:
+            return QtCore.QModelIndex()
+
+        return self.createIndex(parent_item.row(), 0, parent_item)
+
+    def add_child(self, item, parent=None):
+        if parent is None:
+            parent = self.root
+
+        parent.add_child(item)
 
 
-class ProfileModel(AbstractTableModel):
+class ProfileModel(AbstractTreeModel):
     """
     * profile category
     * profile name (label)
@@ -724,30 +835,45 @@ class ProfileModel(AbstractTableModel):
         "label",
     ]
 
-    NoCategory = ""
+    DefaultCategory = "profiles"
     CategorySep = ":"
 
     def reset(self, profiles=None):
         profiles = profiles or dict()
 
         self.beginResetModel()
-        self.items[:] = []
+        self.root = TreeItem()
 
         # Get favorites from ctrl.state
+
+        categories = dict()
 
         for name, versions in profiles.items():
             package = versions[Latest]
             data = allzparkconfig.metadata_from_package(package)
 
-            item = {
+            item = TreeItem({
                 "name": name,
                 "label": data.get("label", name),
                 "icon": self._fetch_icon(package, data),
-                "category": data.get("category", self.NoCategory),
+                "category": data.get("category", self.DefaultCategory),
                 "isFavorite": False,
-            }
+            })
 
-            self.items.append(item)
+            category_name = item["category"]
+            if category_name in categories:
+                category = categories[category_name]
+            else:
+                category = TreeItem({
+                    "name": category_name,
+                    "label": category_name,
+                    "icon": "",
+                    "isCategory": True,
+                })
+                categories[category_name] = category
+                self.root.add_child(category)
+
+            category.add_child(item)
 
         self.endResetModel()
 
