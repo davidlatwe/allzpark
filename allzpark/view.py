@@ -261,6 +261,7 @@ class Window(QtWidgets.QMainWindow):
         widgets["profileVersion"].setToolTip("Click to change profile version")
         widgets["profileVersion"].setModel(ctrl.models["profileVersions"])
 
+        docks["profiles"].set_model(ctrl.models["profiles"])
         docks["packages"].set_model(ctrl.models["packages"])
         docks["context"].set_model(ctrl.models["context"])
         docks["environment"].set_model(ctrl.models["environment"])

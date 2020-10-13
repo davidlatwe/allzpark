@@ -26,8 +26,9 @@ except ImportError:
     localz = None
 
 log = logging.getLogger(__name__)
-Latest = None  # Enum
-NoVersion = None
+
+Latest = model.Latest  # Enum
+NoVersion = model.NoVersion
 
 
 class State(dict):
@@ -213,6 +214,7 @@ class Controller(QtCore.QObject):
             "apps": model.ApplicationModel(),
 
             # Docks
+            "profiles": model.ProfileModel(),
             "packages": model.PackagesModel(self),
             "context": model.ContextModel(),
             "environment": model.EnvironmentModel(),
@@ -589,6 +591,7 @@ class Controller(QtCore.QObject):
                 default_profile = name
 
             self._state["rezProfiles"].update(profiles)
+            self._models["profiles"].reset(profiles)
             self._models["profileNames"].setStringList(list(profiles))
             self._models["profileNames"].layoutChanged.emit()
 

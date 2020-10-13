@@ -54,12 +54,15 @@ log = logging.getLogger(__name__)
 _basestring = six.string_types[0]  # For Python 2/3
 _usercount = itertools.count(1)
 Finish = None
+Latest = None  # Enum
+NoVersion = None
 
 DisplayRole = QtCore.Qt.DisplayRole
 IconRole = QtCore.Qt.DecorationRole
 LocalizingRole = QtCore.Qt.UserRole + 1
 BetaRole = QtCore.Qt.UserRole + 2
 LatestRole = QtCore.Qt.UserRole + 3
+NameRole = QtCore.Qt.UserRole + 4
 
 
 class AbstractTableModel(QtCore.QAbstractTableModel):
@@ -664,3 +667,111 @@ class ProxyModel(TriStateSortFilterProxyModel):
 
     def rowCount(self, parent=QtCore.QModelIndex()):
         return super(ProxyModel, self).rowCount(parent)
+
+
+class TreeItem(dict):
+
+    def __init__(self, data=None):
+        super(TreeItem, self).__init__(data or {})
+        self._children = list()
+        self._parent = None
+
+    def childCount(self):
+        return len(self._children)
+
+    def child(self, row):
+        if row >= len(self._children):
+            log.warning("Invalid row as child: {0}".format(row))
+            return
+        return self._children[row]
+
+    def children(self):
+        return self._children
+
+    def parent(self):
+        return self._parent
+
+    def row(self):
+        if self._parent is not None:
+            siblings = self.parent().children()
+            return siblings.index(self)
+
+    def add_child(self, child):
+        child._parent = self
+        self._children.append(child)
+
+
+class TreeModel(AbstractTableModel):
+    pass
+
+
+class ProfileModel(AbstractTableModel):
+    """
+    * profile category
+    * profile name (label)
+    * favorite
+    * profile data
+    """
+    ColumnToKey = {
+        0: {
+            NameRole: "name",
+            QtCore.Qt.DisplayRole: "label",
+            QtCore.Qt.DecorationRole: "icon",
+        },
+    }
+
+    Headers = [
+        "label",
+    ]
+
+    NoCategory = ""
+    CategorySep = ":"
+
+    def reset(self, profiles=None):
+        profiles = profiles or dict()
+
+        self.beginResetModel()
+        self.items[:] = []
+
+        # Get favorites from ctrl.state
+
+        for name, versions in profiles.items():
+            package = versions[Latest]
+            data = allzparkconfig.metadata_from_package(package)
+
+            item = {
+                "name": name,
+                "label": data.get("label", name),
+                "icon": self._fetch_icon(package, data),
+                "category": data.get("category", self.NoCategory),
+                "isFavorite": False,
+            }
+
+            self.items.append(item)
+
+        self.endResetModel()
+
+    def _fetch_icon(self, package, data):
+        """Facilitate overriding of icon via package metadata"""
+        # TODO: Code duplicated from `view.Window.on_profile_changed`
+
+        icon = rez.find("Default_Profile")
+
+        if data.get("icon"):
+            uri = package.uri
+            try:
+                values = {
+                    "root": os.path.dirname(uri),
+                    "width": res.px(32),
+                    "height": res.px(32),
+                }
+                icon = data["icon"].format(**values).replace("\\", "/")
+
+            except KeyError:
+                print("Misformatted %s.icon" % package.name)
+            except TypeError:
+                print("Unsupported package repository for icon of %s" % uri)
+            except Exception:
+                print("Unexpected error coming from icon of %s" % uri)
+
+        return res.icon(icon)

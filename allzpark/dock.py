@@ -1380,8 +1380,38 @@ class CssHighlighter(QtGui.QSyntaxHighlighter):
 
 class ProfileView(QtWidgets.QTreeView):
 
+    activated = QtCore.Signal(str)
+
     def __init__(self, parent=None):
         super(ProfileView, self).__init__(parent)
+
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.on_context_menu)
+
+        # hide header
+        self.setHeaderHidden(True)
+
+    def on_context_menu(self, position):
+        index = self.indexAt(position)
+
+        if not index.isValid():
+            # Clicked outside any item
+            return
+
+        model_ = index.model()
+        menu = QtWidgets.QMenu(self)
+
+        name = str(model_.data(index, model.NameRole))
+
+        activate = QtWidgets.QAction("Activate", menu)
+        activate.triggered.connect(lambda: self.on_activate(name))
+        menu.addAction(activate)
+
+        menu.move(QtGui.QCursor.pos())
+        menu.show()
+
+    def on_activate(self, profile):
+        self.activated.emit(profile)
 
 
 class Profiles(AbstractDockWidget):
@@ -1399,49 +1429,62 @@ class Profiles(AbstractDockWidget):
         }
 
         widgets = {
-            # filter bar
-            "controls": QtWidgets.QWidget(),
-            "refresh": QtWidgets.QPushButton("Q"),
-            "search": QtWidgets.QLineEdit(),
+            "main": QtWidgets.QWidget(),
+            # profile tools
+            "tools": QtWidgets.QWidget(),
+            "refresh": QtWidgets.QPushButton("R"),
+            "favorite": QtWidgets.QPushButton("F"),
             # profile treeview
+            "filter": QtWidgets.QLineEdit(),
             "view": ProfileView(),
-            # selected profile details
-            "selected": QtWidgets.QWidget(),
-            "icon": QtWidgets.QLabel(),
-            "name": QtWidgets.QLabel("My_Profile_Full_Name"),
-            "details": QtWidgets.QWidget(),
-            "info": QtWidgets.QTreeView(),
         }
 
-        layout = QtWidgets.QHBoxLayout(widgets["controls"])
-        layout.setContentsMargins(0, 0, 0, 0)
+        models = {
+            "proxy": QtCore.QSortFilterProxyModel(),
+        }
+
+        layout = QtWidgets.QVBoxLayout(widgets["tools"])
+        layout.setContentsMargins(0, 2, 0, 0)
         layout.addWidget(widgets["refresh"])
-        layout.addWidget(widgets["search"])
+        layout.addWidget(widgets["favorite"])
+        # expand all
+        # collapse all
+        # (epic) quick make profile
+        # (epic) quick edit profile
+        # (epic) remove or hide local profile
+        layout.addStretch()
 
-        layout = QtWidgets.QHBoxLayout(widgets["selected"])
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(widgets["icon"])
-        layout.addWidget(widgets["name"], stretch=True)
-
-        layout = QtWidgets.QVBoxLayout(widgets["details"])
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(widgets["selected"])
-        layout.addWidget(widgets["info"])
-
-        layout = QtWidgets.QVBoxLayout(panels["central"])
-        layout.setContentsMargins(6, 0, 6, 0)
-        layout.addWidget(widgets["controls"])
+        layout = QtWidgets.QVBoxLayout(widgets["main"])
+        layout.setContentsMargins(0, 2, 0, 0)
+        layout.addWidget(widgets["filter"])
         layout.addWidget(widgets["view"], stretch=True)
-        layout.addWidget(widgets["details"])
 
-        widgets["icon"].setPixmap(res.pixmap("File_Query_32"))
+        layout = QtWidgets.QHBoxLayout(panels["central"])
+        layout.setContentsMargins(6, 0, 6, 0)
+        layout.addWidget(widgets["tools"])
+        layout.addWidget(widgets["main"], stretch=True)
+
+        filter = widgets["filter"]
+        proxy = models["proxy"]
+
+        proxy.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        filter.setPlaceholderText("Filter profiles..")
+
+        filter.textChanged.connect(proxy.setFilterFixedString)
+        widgets["refresh"].clicked.connect(self.on_refresh)
+        widgets["favorite"].clicked.connect(self.on_favorite)
+        widgets["view"].activated.connect(self.on_activate)
 
         self._widgets = widgets
+        self._models = models
+        self._ctrl = ctrl
 
         self.setWidget(panels["central"])
 
     def set_model(self, model_):
-        pass
+        proxy = self._models["proxy"]
+        proxy.setSourceModel(model_)
+        self._widgets["view"].setModel(proxy)
 
     def on_context_menu(self, window):
         def _on_context_menu(*args):
@@ -1466,3 +1509,22 @@ class Profiles(AbstractDockWidget):
             menu.show()
 
         return _on_context_menu
+
+    def on_refresh(self):
+        self._ctrl.reset()
+
+    def on_activate(self, profile):
+        self._ctrl.select_profile(profile)
+        self._ctrl.state.store("startupProfile", profile)
+
+    def on_favorite(self):
+        # TODO: get selected profile
+
+        profile = ""
+        state = self._ctrl.state
+
+        favorites = set(state.retrieve("favoriteProfiles", "").split(","))
+        favorites.add(profile)
+        state.store("favoriteProfiles", ",".join(favorites))
+
+        # TODO: set model favorite
