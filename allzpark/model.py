@@ -881,7 +881,7 @@ class ProfileModel(AbstractTreeModel):
         """Facilitate overriding of icon via package metadata"""
         # TODO: Code duplicated from `view.Window.on_profile_changed`
 
-        icon = rez.find("Default_Profile")
+        icon = res.find("Default_Profile")
 
         if data.get("icon"):
             uri = package.uri
