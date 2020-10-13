@@ -867,7 +867,7 @@ class ProfileModel(AbstractTreeModel):
                 category = TreeItem({
                     "name": category_name,
                     "label": category_name,
-                    "icon": "",
+                    "icon": None,
                     "isCategory": True,
                 })
                 categories[category_name] = category
