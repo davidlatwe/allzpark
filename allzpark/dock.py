@@ -1385,11 +1385,12 @@ class ProfileView(QtWidgets.QTreeView):
     def __init__(self, parent=None):
         super(ProfileView, self).__init__(parent)
 
-        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.on_context_menu)
-
-        # hide header
         self.setHeaderHidden(True)
+        self.setSortingEnabled(True)
+        self.sortByColumn(0, QtCore.Qt.AscendingOrder)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+
+        self.customContextMenuRequested.connect(self.on_context_menu)
 
     def on_context_menu(self, position):
         index = self.indexAt(position)
@@ -1434,6 +1435,8 @@ class Profiles(AbstractDockWidget):
             "tools": QtWidgets.QWidget(),
             "refresh": QtWidgets.QPushButton("R"),
             "favorite": QtWidgets.QPushButton("F"),
+            "expand": QtWidgets.QPushButton("E"),
+            "collapse": QtWidgets.QPushButton("C"),
             # profile treeview
             "filter": QtWidgets.QLineEdit(),
             "view": ProfileView(),
@@ -1447,8 +1450,8 @@ class Profiles(AbstractDockWidget):
         layout.setContentsMargins(0, 2, 0, 0)
         layout.addWidget(widgets["refresh"])
         layout.addWidget(widgets["favorite"])
-        # expand all
-        # collapse all
+        layout.addWidget(widgets["expand"])
+        layout.addWidget(widgets["collapse"])
         # (epic) quick make profile
         # (epic) quick edit profile
         # (epic) remove or hide local profile
@@ -1465,15 +1468,19 @@ class Profiles(AbstractDockWidget):
         layout.addWidget(widgets["main"], stretch=True)
 
         filter = widgets["filter"]
+        view = widgets["view"]
         proxy = models["proxy"]
 
         proxy.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
         filter.setPlaceholderText("Filter profiles..")
 
+        filter.textChanged.connect(view.expandAll)
         filter.textChanged.connect(proxy.setFilterFixedString)
+        view.activated.connect(self.on_activate)
         widgets["refresh"].clicked.connect(self.on_refresh)
         widgets["favorite"].clicked.connect(self.on_favorite)
-        widgets["view"].activated.connect(self.on_activate)
+        widgets["expand"].clicked.connect(view.expandAll)
+        widgets["collapse"].clicked.connect(view.collapseAll)
 
         self._widgets = widgets
         self._models = models
