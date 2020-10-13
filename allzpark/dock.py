@@ -1440,7 +1440,7 @@ class Profiles(AbstractDockWidget):
         }
 
         models = {
-            "proxy": QtCore.QSortFilterProxyModel(),
+            "proxy": model.RecursiveSortFilterProxyModel(),
         }
 
         layout = QtWidgets.QVBoxLayout(widgets["tools"])

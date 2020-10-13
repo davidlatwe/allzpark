@@ -816,6 +816,51 @@ class AbstractTreeModel(QtCore.QAbstractItemModel):
         parent.add_child(item)
 
 
+def is_filtering_recursible():
+    """Does Qt binding support recursive filtering for QSortFilterProxyModel?
+
+    Recursive filtering was introduced in Qt 5.10.
+
+    """
+    return hasattr(QtCore.QSortFilterProxyModel,
+                   "setRecursiveFilteringEnabled")
+
+
+class RecursiveSortFilterProxyModel(QtCore.QSortFilterProxyModel):
+    """Filters to the regex if any of the children matches allow parent"""
+
+    if is_filtering_recursible():
+        def filter_accepts_parent(self, index, node):
+            # With the help of `RecursiveFiltering` feature from Qt 5.10+,
+            # parent always not be accepted by default.
+            return False
+    else:
+        def filter_accepts_parent(self, index, model):
+            for child_row in range(model.rowCount(index)):
+                if self.filterAcceptsRow(child_row, index):
+                    return True
+            return False
+
+        # Patch future function
+        def setRecursiveFilteringEnabled(self, *args):
+            pass
+
+    def __init__(self, *args, **kwargs):
+        super(RecursiveSortFilterProxyModel, self).__init__(*args, **kwargs)
+        self.setRecursiveFilteringEnabled(True)
+
+    def filterAcceptsRow(self, row, parent):
+        model = self.sourceModel()
+        source_index = model.index(row, self.filterKeyColumn(), parent)
+        if source_index.isValid():
+            item = source_index.internalPointer()
+            if item.childCount():
+                return self.filter_accepts_parent(source_index, model)
+
+        return super(RecursiveSortFilterProxyModel,
+                     self).filterAcceptsRow(row, parent)
+
+
 class ProfileModel(AbstractTreeModel):
     """
     * profile category
