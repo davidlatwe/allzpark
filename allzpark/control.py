@@ -591,6 +591,7 @@ class Controller(QtCore.QObject):
                 default_profile = name
 
             self._state["rezProfiles"].update(profiles)
+            self._models["profiles"].set_favorites(self)
             self._models["profiles"].reset(profiles)
             self._models["profileNames"].setStringList(list(profiles))
             self._models["profileNames"].layoutChanged.emit()

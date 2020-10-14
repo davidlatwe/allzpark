@@ -722,10 +722,8 @@ class AbstractTreeModel(QtCore.QAbstractItemModel):
     def find(self, name):
         return next(i for i in self.root.walk() if i.get("name") == name)
 
-    def findIndex(self, name):
-        return self.createIndex(
-            self.find(name).row(), 0, QtCore.QModelIndex()
-        )
+    def findIndex(self, name, parent):
+        return self.createIndex(self.find(name).row(), 0, parent)
 
     def rowCount(self, parent=QtCore.QModelIndex()):
         if parent.isValid():
@@ -881,7 +879,43 @@ class ProfileModel(AbstractTreeModel):
     ]
 
     DefaultCategory = "profiles"
-    CategorySep = ":"
+
+    def __init__(self, parent=None):
+        super(ProfileModel, self).__init__(parent)
+        self.is_filtering = True
+        self.current = ""
+        self.favorites = set([])
+
+        self.icons = {
+            "profile": res.icon("profile_normal"),
+            "favorite": res.icon("profile_star"),
+            "current": res.icon("profile_dot_green"),
+            "currentFav": res.icon("profile_dot_yellow"),
+        }
+
+    def set_favorites(self, ctrl):
+        favorites = ctrl.state.retrieve("favoriteProfiles", "").split(",")
+        self.favorites = set(favorites)
+
+    def update_favorite(self, ctrl, index):
+        if not index.isValid():
+            return
+
+        name = index.data(NameRole)
+
+        if name in self.favorites:
+            self.favorites.remove(name)
+        else:
+            self.favorites.add(name)
+
+        ctrl.state.store("favoriteProfiles", ",".join(self.favorites))
+
+    def update_profile_icon(self, index):
+        if not index.isValid():
+            return
+
+        icon = self.profile_icon(index.data(NameRole))
+        self.setData(index, icon, role=QtCore.Qt.DecorationRole)
 
     def reset(self, profiles=None):
         profiles = profiles or dict()
@@ -900,9 +934,8 @@ class ProfileModel(AbstractTreeModel):
             item = TreeItem({
                 "name": name,
                 "label": data.get("label", name),
-                "icon": self._fetch_icon(package, data),
+                "icon": self.profile_icon(name),
                 "category": data.get("category", self.DefaultCategory),
-                "isFavorite": False,
             })
 
             category_name = item["category"]
@@ -910,10 +943,9 @@ class ProfileModel(AbstractTreeModel):
                 category = categories[category_name]
             else:
                 category = TreeItem({
-                    "name": category_name,
+                    "name": None,
                     "label": category_name,
                     "icon": None,
-                    "isCategory": True,
                 })
                 categories[category_name] = category
                 self.root.add_child(category)
@@ -922,27 +954,36 @@ class ProfileModel(AbstractTreeModel):
 
         self.endResetModel()
 
-    def _fetch_icon(self, package, data):
-        """Facilitate overriding of icon via package metadata"""
-        # TODO: Code duplicated from `view.Window.on_profile_changed`
+    def profile_icon(self, name):
+        if name in self.favorites:
+            if name == self.current:
+                icon = self.icons["currentFav"]
+            else:
+                icon = self.icons["favorite"]
+        else:
+            if name == self.current:
+                icon = self.icons["current"]
+            else:
+                icon = self.icons["profile"]
 
-        icon = res.find("Default_Profile")
+        return icon
 
-        if data.get("icon"):
-            uri = package.uri
-            try:
-                values = {
-                    "root": os.path.dirname(uri),
-                    "width": res.px(32),
-                    "height": res.px(32),
-                }
-                icon = data["icon"].format(**values).replace("\\", "/")
 
-            except KeyError:
-                print("Misformatted %s.icon" % package.name)
-            except TypeError:
-                print("Unsupported package repository for icon of %s" % uri)
-            except Exception:
-                print("Unexpected error coming from icon of %s" % uri)
+class ProfileProxyModel(RecursiveSortFilterProxyModel):
 
-        return res.icon(icon)
+    def filterAcceptsRow(self, row, parent):
+        model = self.sourceModel()
+        regex = self.filterRegExp()
+        source_index = model.index(row, self.filterKeyColumn(), parent)
+        if source_index.isValid():
+            item = source_index.internalPointer()
+
+            if item.childCount():
+                return self.filter_accepts_parent(source_index, model)
+
+            elif model.is_filtering and regex.isEmpty():
+                name = item["name"]
+                return name == model.current or name in model.favorites
+
+        return super(RecursiveSortFilterProxyModel,
+                     self).filterAcceptsRow(row, parent)

@@ -1414,6 +1414,14 @@ class ProfileView(QtWidgets.QTreeView):
     def on_activate(self, profile):
         self.activated.emit(profile)
 
+    def selected_index(self):
+        return self.selectionModel().currentIndex()
+
+    def selected_profile(self):
+        index = self.selected_index()
+        if index.isValid():
+            return index.data(model.NameRole)
+
 
 class Profiles(AbstractDockWidget):
     """Listing and changing profiles with detailed info"""
@@ -1434,22 +1442,25 @@ class Profiles(AbstractDockWidget):
             # profile tools
             "tools": QtWidgets.QWidget(),
             "refresh": QtWidgets.QPushButton("R"),
-            "favorite": QtWidgets.QPushButton("F"),
+            "favorite": QtWidgets.QPushButton(""),
+            "filtering": QtWidgets.QPushButton("Y"),
             "expand": QtWidgets.QPushButton("E"),
             "collapse": QtWidgets.QPushButton("C"),
             # profile treeview
-            "filter": QtWidgets.QLineEdit(),
+            "search": QtWidgets.QLineEdit(),
             "view": ProfileView(),
         }
 
         models = {
-            "proxy": model.RecursiveSortFilterProxyModel(),
+            "source": None,
+            "proxy": model.ProfileProxyModel(),
         }
 
         layout = QtWidgets.QVBoxLayout(widgets["tools"])
         layout.setContentsMargins(0, 2, 0, 0)
         layout.addWidget(widgets["refresh"])
         layout.addWidget(widgets["favorite"])
+        layout.addWidget(widgets["filtering"])
         layout.addWidget(widgets["expand"])
         layout.addWidget(widgets["collapse"])
         # (epic) quick make profile
@@ -1459,7 +1470,7 @@ class Profiles(AbstractDockWidget):
 
         layout = QtWidgets.QVBoxLayout(widgets["main"])
         layout.setContentsMargins(0, 2, 0, 0)
-        layout.addWidget(widgets["filter"])
+        layout.addWidget(widgets["search"])
         layout.addWidget(widgets["view"], stretch=True)
 
         layout = QtWidgets.QHBoxLayout(panels["central"])
@@ -1467,18 +1478,27 @@ class Profiles(AbstractDockWidget):
         layout.addWidget(widgets["tools"])
         layout.addWidget(widgets["main"], stretch=True)
 
-        filter = widgets["filter"]
+        search = widgets["search"]
         view = widgets["view"]
         proxy = models["proxy"]
 
-        proxy.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        filter.setPlaceholderText("Filter profiles..")
+        view.setModel(proxy)
 
-        filter.textChanged.connect(view.expandAll)
-        filter.textChanged.connect(proxy.setFilterFixedString)
+        proxy.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        search.setPlaceholderText("Filter profiles..")
+
+        # icons
+        icon = res.icon("star_bright")
+        icon.addPixmap(res.pixmap("star_dim"), icon.Disabled)
+        widgets["favorite"].setIcon(icon)
+
+        # signals
+        search.textChanged.connect(view.expandAll)
+        search.textChanged.connect(proxy.setFilterFixedString)
         view.activated.connect(self.on_activate)
         widgets["refresh"].clicked.connect(self.on_refresh)
         widgets["favorite"].clicked.connect(self.on_favorite)
+        widgets["filtering"].clicked.connect(self.on_filtering)
         widgets["expand"].clicked.connect(view.expandAll)
         widgets["collapse"].clicked.connect(view.collapseAll)
 
@@ -1488,10 +1508,17 @@ class Profiles(AbstractDockWidget):
 
         self.setWidget(panels["central"])
 
+        self.update_favorite_btn(None)  # nothing selected on startup
+
     def set_model(self, model_):
+        view = self._widgets["view"]
         proxy = self._models["proxy"]
         proxy.setSourceModel(model_)
-        self._widgets["view"].setModel(proxy)
+
+        selection = view.selectionModel()
+        selection.currentChanged.connect(self.on_selected_profile_changed)
+
+        self._models["source"] = model_
 
     def on_context_menu(self, window):
         def _on_context_menu(*args):
@@ -1521,17 +1548,41 @@ class Profiles(AbstractDockWidget):
         self._ctrl.reset()
 
     def on_activate(self, profile):
+        model_ = self._models["source"]
+        model_.current = profile
         self._ctrl.select_profile(profile)
         self._ctrl.state.store("startupProfile", profile)
 
     def on_favorite(self):
-        # TODO: get selected profile
+        model_ = self._models["source"]
+        proxy = self._models["proxy"]
+        view = self._widgets["view"]
+        index = proxy.mapToSource(view.selected_index())
 
-        profile = ""
-        state = self._ctrl.state
+        model_.update_favorite(self._ctrl, index)
+        model_.update_profile_icon(index)
 
-        favorites = set(state.retrieve("favoriteProfiles", "").split(","))
-        favorites.add(profile)
-        state.store("favoriteProfiles", ",".join(favorites))
+    def on_filtering(self):
+        proxy = self._models["proxy"]
+        model_ = self._models["source"]
+        model_.is_filtering = not model_.is_filtering
 
-        # TODO: set model favorite
+        proxy.invalidateFilter()
+        self.update_filtering_btn()
+
+    def on_selected_profile_changed(self):
+        view = self._widgets["view"]
+        self.update_favorite_btn(view.selected_profile())
+
+    def update_favorite_btn(self, profile):
+        btn = self._widgets["favorite"]
+        btn.setEnabled(bool(profile))
+
+    def update_filtering_btn(self):
+        model_ = self._models["source"]
+        btn = self._widgets["filtering"]
+
+        if model_.is_filtering:
+            btn.setText("Y")
+        else:
+            btn.setText("H")
