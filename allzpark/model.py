@@ -720,10 +720,15 @@ class AbstractTreeModel(QtCore.QAbstractItemModel):
         pass
 
     def find(self, name):
-        return next(i for i in self.root.walk() if i.get("name") == name)
+        walk = self.root.walk()
+        return next((i for i in walk if i.get("name") == name), None)
 
-    def findIndex(self, name, parent):
-        return self.createIndex(self.find(name).row(), 0, parent)
+    def findIndex(self, name):
+        item = self.find(name)
+        if item is None:
+            return QtCore.QModelIndex()
+        else:
+            return self.createIndex(item.row(), 0, item)
 
     def rowCount(self, parent=QtCore.QModelIndex()):
         if parent.isValid():
@@ -886,16 +891,26 @@ class ProfileModel(AbstractTreeModel):
         self.current = ""
         self.favorites = set([])
 
-        self.icons = {
-            "profile": res.icon("profile_normal"),
-            "favorite": res.icon("profile_star"),
-            "current": res.icon("profile_dot_green"),
-            "currentFav": res.icon("profile_dot_yellow"),
-        }
+        self.icons = [
+            # normal
+            res.icon("profile_normal"),
+            # favorite
+            res.icon("profile_normal_star"),
+            # current
+            res.icon("profile_current"),
+            # current + favorite
+            res.icon("profile_current_star"),
+        ]
 
     def set_favorites(self, ctrl):
         favorites = ctrl.state.retrieve("favoriteProfiles", "").split(",")
         self.favorites = set(favorites)
+
+    def set_current(self, name):
+        previous = self.current
+        self.current = name
+        self.update_profile_icon(self.findIndex(previous))
+        self.update_profile_icon(self.findIndex(name))
 
     def update_favorite(self, ctrl, index):
         if not index.isValid():
@@ -955,18 +970,9 @@ class ProfileModel(AbstractTreeModel):
         self.endResetModel()
 
     def profile_icon(self, name):
-        if name in self.favorites:
-            if name == self.current:
-                icon = self.icons["currentFav"]
-            else:
-                icon = self.icons["favorite"]
-        else:
-            if name == self.current:
-                icon = self.icons["current"]
-            else:
-                icon = self.icons["profile"]
-
-        return icon
+        is_favorite = (name in self.favorites) * 1
+        is_current = (name == self.current) * 2
+        return self.icons[is_current + is_favorite]
 
 
 class ProfileProxyModel(RecursiveSortFilterProxyModel):

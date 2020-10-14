@@ -1441,11 +1441,11 @@ class Profiles(AbstractDockWidget):
             "main": QtWidgets.QWidget(),
             # profile tools
             "tools": QtWidgets.QWidget(),
-            "refresh": QtWidgets.QPushButton("R"),
+            "refresh": QtWidgets.QPushButton(""),
             "favorite": QtWidgets.QPushButton(""),
-            "filtering": QtWidgets.QPushButton("Y"),
-            "expand": QtWidgets.QPushButton("E"),
-            "collapse": QtWidgets.QPushButton("C"),
+            "filtering": QtWidgets.QPushButton(""),
+            "expand": QtWidgets.QPushButton("+"),
+            "collapse": QtWidgets.QPushButton("-"),
             # profile treeview
             "search": QtWidgets.QLineEdit(),
             "view": ProfileView(),
@@ -1488,9 +1488,24 @@ class Profiles(AbstractDockWidget):
         search.setPlaceholderText("Filter profiles..")
 
         # icons
+        icon_size = QtCore.QSize(14, 14)
+
+        icon = res.icon("refresh")
+        widgets["refresh"].setIcon(icon)
+        widgets["refresh"].setIconSize(icon_size)
+
         icon = res.icon("star_bright")
         icon.addPixmap(res.pixmap("star_dim"), icon.Disabled)
         widgets["favorite"].setIcon(icon)
+        widgets["favorite"].setIconSize(icon_size)
+
+        icon = QtGui.QIcon()
+        icon.addPixmap(res.pixmap("filter_on"), icon.Normal, icon.On)
+        icon.addPixmap(res.pixmap("filter_off"), icon.Normal, icon.Off)
+        widgets["filtering"].setIcon(icon)
+        widgets["filtering"].setIconSize(icon_size)
+        widgets["filtering"].setCheckable(True)
+        widgets["filtering"].setAutoRepeat(True)
 
         # signals
         search.textChanged.connect(view.expandAll)
@@ -1519,6 +1534,7 @@ class Profiles(AbstractDockWidget):
         selection.currentChanged.connect(self.on_selected_profile_changed)
 
         self._models["source"] = model_
+        self._widgets["filtering"].setChecked(model_.is_filtering)
 
     def on_context_menu(self, window):
         def _on_context_menu(*args):
@@ -1548,8 +1564,7 @@ class Profiles(AbstractDockWidget):
         self._ctrl.reset()
 
     def on_activate(self, profile):
-        model_ = self._models["source"]
-        model_.current = profile
+        self._models["source"].set_current(profile)
         self._ctrl.select_profile(profile)
         self._ctrl.state.store("startupProfile", profile)
 
@@ -1568,7 +1583,6 @@ class Profiles(AbstractDockWidget):
         model_.is_filtering = not model_.is_filtering
 
         proxy.invalidateFilter()
-        self.update_filtering_btn()
 
     def on_selected_profile_changed(self):
         view = self._widgets["view"]
@@ -1577,12 +1591,3 @@ class Profiles(AbstractDockWidget):
     def update_favorite_btn(self, profile):
         btn = self._widgets["favorite"]
         btn.setEnabled(bool(profile))
-
-    def update_filtering_btn(self):
-        model_ = self._models["source"]
-        btn = self._widgets["filtering"]
-
-        if model_.is_filtering:
-            btn.setText("Y")
-        else:
-            btn.setText("H")

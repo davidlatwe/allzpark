@@ -591,8 +591,6 @@ class Controller(QtCore.QObject):
                 default_profile = name
 
             self._state["rezProfiles"].update(profiles)
-            self._models["profiles"].set_favorites(self)
-            self._models["profiles"].reset(profiles)
             self._models["profileNames"].setStringList(list(profiles))
             self._models["profileNames"].layoutChanged.emit()
 
@@ -610,6 +608,10 @@ class Controller(QtCore.QObject):
             # or user preferences has been wiped.
             if not current_profile:
                 current_profile = default_profile
+
+            self._models["profiles"].set_favorites(self)
+            self._models["profiles"].set_current(current_profile)
+            self._models["profiles"].reset(profiles)
 
             self._state["profileName"] = current_profile
             self._state["root"] = root
