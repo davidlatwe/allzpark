@@ -105,11 +105,11 @@ Window #header QComboBox {
     padding: 0;
 }
 
-Window #header #profileBtn {
+/*Window #header #profileBtn {
     background: transparent;
     border: 1px solid #aaa;
     padding: 0;
-}
+}*/
 
 Window #header #profileReset {
 

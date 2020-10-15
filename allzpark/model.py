@@ -938,11 +938,10 @@ class ProfileModel(AbstractTreeModel):
         self.beginResetModel()
         self.root = TreeItem()
 
-        # Get favorites from ctrl.state
-
         categories = dict()
 
         for name, versions in profiles.items():
+            # NOTE: This model only takes the latest profile
             package = versions[Latest]
             data = allzparkconfig.metadata_from_package(package)
 

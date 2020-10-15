@@ -1424,9 +1424,13 @@ class ProfileView(QtWidgets.QTreeView):
 
 
 class Profiles(AbstractDockWidget):
-    """Listing and changing profiles with detailed info"""
+    """Listing and changing profiles"""
 
     icon = "Default_Profile"
+
+    profile_changed = QtCore.Signal(str)
+    version_changed = QtCore.Signal(str)
+    reset = QtCore.Signal()
 
     def __init__(self, ctrl, parent=None):
         super(Profiles, self).__init__("Profiles", parent)
@@ -1439,6 +1443,11 @@ class Profiles(AbstractDockWidget):
 
         widgets = {
             "main": QtWidgets.QWidget(),
+            "tree": QtWidgets.QWidget(),
+            # current profile
+            "current": QtWidgets.QWidget(),
+            "name": QtWidgets.QLabel(),
+            "version": LineEditWithCompleter(),
             # profile tools
             "tools": QtWidgets.QWidget(),
             "refresh": QtWidgets.QPushButton(""),
@@ -1446,6 +1455,9 @@ class Profiles(AbstractDockWidget):
             "filtering": QtWidgets.QPushButton(""),
             "expand": QtWidgets.QPushButton(""),
             "collapse": QtWidgets.QPushButton(""),
+            # separator
+            "sep1": QtWidgets.QFrame(),
+            "versioning": QtWidgets.QPushButton(""),
             # profile treeview
             "search": QtWidgets.QLineEdit(),
             "view": ProfileView(),
@@ -1456,6 +1468,11 @@ class Profiles(AbstractDockWidget):
             "proxy": model.ProfileProxyModel(),
         }
 
+        layout = QtWidgets.QVBoxLayout(widgets["current"])
+        layout.setContentsMargins(0, 2, 0, 0)
+        layout.addWidget(widgets["name"])
+        layout.addWidget(widgets["version"])
+
         layout = QtWidgets.QVBoxLayout(widgets["tools"])
         layout.setContentsMargins(0, 2, 0, 0)
         layout.addWidget(widgets["refresh"])
@@ -1463,29 +1480,44 @@ class Profiles(AbstractDockWidget):
         layout.addWidget(widgets["filtering"])
         layout.addWidget(widgets["expand"])
         layout.addWidget(widgets["collapse"])
+        layout.addWidget(widgets["sep1"])
+        layout.addWidget(widgets["versioning"])
         # (epic) quick make profile
         # (epic) quick edit profile
         # (epic) remove or hide local profile
         layout.addStretch()
 
-        layout = QtWidgets.QVBoxLayout(widgets["main"])
+        layout = QtWidgets.QVBoxLayout(widgets["tree"])
         layout.setContentsMargins(0, 2, 0, 0)
         layout.addWidget(widgets["search"])
         layout.addWidget(widgets["view"], stretch=True)
 
-        layout = QtWidgets.QHBoxLayout(panels["central"])
-        layout.setContentsMargins(6, 0, 6, 0)
+        layout = QtWidgets.QHBoxLayout(widgets["main"])
+        layout.setContentsMargins(0, 2, 0, 0)
         layout.addWidget(widgets["tools"])
+        layout.addWidget(widgets["tree"], stretch=True)
+
+        layout = QtWidgets.QVBoxLayout(panels["central"])
+        layout.setContentsMargins(6, 0, 6, 0)
+        layout.addWidget(widgets["current"])
         layout.addWidget(widgets["main"], stretch=True)
 
+        version = widgets["version"]
         search = widgets["search"]
         view = widgets["view"]
         proxy = models["proxy"]
 
         view.setModel(proxy)
+        selection = view.selectionModel()
 
         proxy.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
         search.setPlaceholderText("Filter profiles..")
+
+        version.setToolTip("Click to change profile version")
+        version.setEnabled(False)
+
+        widgets["sep1"].setFrameShape(QtWidgets.QFrame.HLine)
+        widgets["sep1"].setFrameShadow(QtWidgets.QFrame.Sunken)
 
         # icons
         icon_size = QtCore.QSize(14, 14)
@@ -1507,6 +1539,14 @@ class Profiles(AbstractDockWidget):
         widgets["filtering"].setCheckable(True)
         widgets["filtering"].setAutoRepeat(True)
 
+        icon = QtGui.QIcon()
+        icon.addPixmap(res.pixmap("version_on"), icon.Normal, icon.On)
+        icon.addPixmap(res.pixmap("version_off"), icon.Normal, icon.Off)
+        widgets["versioning"].setIcon(icon)
+        widgets["versioning"].setIconSize(icon_size)
+        widgets["versioning"].setCheckable(True)
+        widgets["versioning"].setAutoRepeat(True)
+
         icon = res.icon("expand")
         widgets["expand"].setIcon(icon)
         widgets["expand"].setIconSize(icon_size)
@@ -1516,14 +1556,19 @@ class Profiles(AbstractDockWidget):
         widgets["collapse"].setIconSize(icon_size)
 
         # signals
+        view.activated.connect(self.profile_changed.emit)
+        selection.currentChanged.connect(self.on_selected_profile_changed)
+        version.changed.connect(self.version_changed.emit)
         search.textChanged.connect(view.expandAll)
         search.textChanged.connect(proxy.setFilterFixedString)
-        view.activated.connect(self.on_activate)
-        widgets["refresh"].clicked.connect(self.on_refresh)
+        widgets["refresh"].clicked.connect(self.reset.emit)
         widgets["favorite"].clicked.connect(self.on_favorite)
         widgets["filtering"].clicked.connect(self.on_filtering)
+        widgets["versioning"].clicked.connect(
+            lambda *args: version.setEnabled(not version.isEnabled()))
         widgets["expand"].clicked.connect(view.expandAll)
         widgets["collapse"].clicked.connect(view.collapseAll)
+        ctrl.resetted.connect(view.expandAll)
 
         self._widgets = widgets
         self._models = models
@@ -1533,20 +1578,18 @@ class Profiles(AbstractDockWidget):
 
         self.update_favorite_btn(None)  # nothing selected on startup
 
-    def set_model(self, model_):
-        view = self._widgets["view"]
+    def set_model(self, profile_model, version_model):
+        # profile
         proxy = self._models["proxy"]
-        proxy.setSourceModel(model_)
-
-        selection = view.selectionModel()
-        selection.currentChanged.connect(self.on_selected_profile_changed)
-
-        self._models["source"] = model_
-        self._widgets["filtering"].setChecked(model_.is_filtering)
+        proxy.setSourceModel(profile_model)
+        self._models["source"] = profile_model
+        self._widgets["filtering"].setChecked(profile_model.is_filtering)
+        # version
+        self._widgets["version"].setModel(version_model)
 
     def on_context_menu(self, window):
         def _on_context_menu(*args):
-            name = window._widgets["profileName"].text()
+            name = self._models["source"].current
 
             menu = MenuWithTooltip(window)
             separator = QtWidgets.QWidgetAction(menu)
@@ -1567,14 +1610,6 @@ class Profiles(AbstractDockWidget):
             menu.show()
 
         return _on_context_menu
-
-    def on_refresh(self):
-        self._ctrl.reset()
-
-    def on_activate(self, profile):
-        self._models["source"].set_current(profile)
-        self._ctrl.select_profile(profile)
-        self._ctrl.state.store("startupProfile", profile)
 
     def on_favorite(self):
         model_ = self._models["source"]
@@ -1599,3 +1634,7 @@ class Profiles(AbstractDockWidget):
     def update_favorite_btn(self, profile):
         btn = self._widgets["favorite"]
         btn.setEnabled(bool(profile))
+
+    def update_current(self, profile, version):
+        self._widgets["name"].setText(profile)
+        self._widgets["version"].setText(version)

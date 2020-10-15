@@ -210,7 +210,7 @@ class Controller(QtCore.QObject):
 
         models = {
             "profileVersions": QtCore.QStringListModel(),
-            "profileNames": QtCore.QStringListModel(),
+            # "profileNames": QtCore.QStringListModel(),
             "apps": model.ApplicationModel(),
 
             # Docks
@@ -591,8 +591,8 @@ class Controller(QtCore.QObject):
                 default_profile = name
 
             self._state["rezProfiles"].update(profiles)
-            self._models["profileNames"].setStringList(list(profiles))
-            self._models["profileNames"].layoutChanged.emit()
+            # self._models["profileNames"].setStringList(list(profiles))
+            # self._models["profileNames"].layoutChanged.emit()
 
             # On resetting after startup, there will be a
             # currently selected profile that may differ from
@@ -607,6 +607,7 @@ class Controller(QtCore.QObject):
             # The user has never opened the GUI before,
             # or user preferences has been wiped.
             if not current_profile:
+                # What would happen if default_profile is None ?
                 current_profile = default_profile
 
             self._models["profiles"].set_favorites(self)
