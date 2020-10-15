@@ -1444,8 +1444,8 @@ class Profiles(AbstractDockWidget):
             "refresh": QtWidgets.QPushButton(""),
             "favorite": QtWidgets.QPushButton(""),
             "filtering": QtWidgets.QPushButton(""),
-            "expand": QtWidgets.QPushButton("+"),
-            "collapse": QtWidgets.QPushButton("-"),
+            "expand": QtWidgets.QPushButton(""),
+            "collapse": QtWidgets.QPushButton(""),
             # profile treeview
             "search": QtWidgets.QLineEdit(),
             "view": ProfileView(),
@@ -1506,6 +1506,14 @@ class Profiles(AbstractDockWidget):
         widgets["filtering"].setIconSize(icon_size)
         widgets["filtering"].setCheckable(True)
         widgets["filtering"].setAutoRepeat(True)
+
+        icon = res.icon("expand")
+        widgets["expand"].setIcon(icon)
+        widgets["expand"].setIconSize(icon_size)
+
+        icon = res.icon("collapse")
+        widgets["collapse"].setIcon(icon)
+        widgets["collapse"].setIconSize(icon_size)
 
         # signals
         search.textChanged.connect(view.expandAll)
