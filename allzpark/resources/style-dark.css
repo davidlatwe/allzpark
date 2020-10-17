@@ -33,17 +33,17 @@ QMenu, QLabel {
 }
 
 QPushButton {
-	border: 1px solid #21201F;
-	background: #403E3D;
-	padding: 5px;
+    border: 1px solid #21201F;
+    background: #403E3D;
+    padding: 5px;
 }
 
 QPushButton:hover {
-	border: 1px solid #ADD9F2;
+    border: 1px solid #ADD9F2;
 }
 
 QTextEdit, QLineEdit {
-	border: 1px solid #21201F;
+    border: 1px solid #21201F;
     background: #403E3D;
 }
 
@@ -68,13 +68,13 @@ Window #header QComboBox {
 }
 
 Window #header QPushButton[type=toggle] {
-	border: none;
-	background: transparent;
+    border: none;
+    background: transparent;
 }
 
 Window #header QPushButton[type=toggle]:hover {
-	border: 1px solid #ADD9F2;
-	background: #403E3D;
+    border: 1px solid #ADD9F2;
+    background: #403E3D;
 }
 
 Window #logo {
@@ -121,26 +121,6 @@ Window #body QLineEdit {
     margin: 3px;
 }
 
-FullCommand QLineEdit {
-  color: rgba(0, 0, 0, 0.2);
-}
-
-FullCommand QComboBox {
-    background: silver;
-    color: #222;
-    border: none;
-    padding: 2px;
-    padding-right: 0px;
-}
-
-FullCommand QComboBox::drop-down {
-    border: none;
-}
-
-FullCommand QComboBox::down-arrow {
-    image: url(%(res)s/Logo_64.png);
-}
-
 #launchBtn {
     height: 30px;
     margin: 0;
@@ -149,8 +129,8 @@ FullCommand QComboBox::down-arrow {
 }
 
 QAbstractItemView {
-	background: #403E3D;
-	border: 1px solid #21201F;
+    background: #403E3D;
+    border: 1px solid #21201F;
     selection-background-color: #ddd;
     selection-color: #111;
 }
@@ -171,7 +151,7 @@ QAbstractItemView::item::hover {
 }
 
 QHeaderView {
-	border: none;
+    border: none;
     font-weight: bold;
     qproperty-defaultAlignment: AlignLeft;
 }
@@ -228,13 +208,9 @@ Context #overlay {
     min-height: 150px;
 }
 
-QDockWidget {
-	border: 1px solid #21201F;
-}
-
 QDockWidget::title {
-	background-color: #21201F;
-	padding: 3px;
+    background-color: #21201F;
+    padding: 3px;
 }
 
 QDockWidget::float-button, QDockWidget::close-button {

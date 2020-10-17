@@ -1080,9 +1080,12 @@ class Preferences(AbstractDockWidget):
         self._window.on_setting_changed(argument)
 
     def on_css_applied(self, css):
+        from . import resources
+        with open(resources.find("style.css")) as f:
+            originalcss = f.read()
         self._ctrl.state.store("userCss", css)
         self._window.setStyleSheet("\n".join([
-            self._window._originalcss, css]))
+            originalcss, css]))
         self._window.tell("Applying css..")
 
 
