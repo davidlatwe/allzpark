@@ -39,19 +39,23 @@ def icon(*paths):
 
 def load_style(palette_name, load_fonts=False):
     palettes = load_palettes()
-
-    # Inject default resource path
-    _res_root = os.path.join(dirname, "resources").replace("\\", "/")
-    for p in palettes.values():
-        p["res"] = _res_root
+    _cache["_current_palette_"] = palettes[palette_name]
 
     with open(find("style.css")) as f:
-        css = f.read() % palettes[palette_name]
+        css = format_stylesheet(f.read())
 
     if load_fonts:
         _load_fonts()
 
     return css
+
+
+def format_stylesheet(css):
+    return css % dict(
+        root=dirname.replace("\\", "/"),
+        res=os.path.join(dirname, "resources").replace("\\", "/"),
+        **_cache["_current_palette_"]
+    )
 
 
 def load_palettes():
