@@ -230,6 +230,7 @@ class Console(AbstractDockWidget):
         self.setWidget(panels["central"])
 
         widgets["text"].setReadOnly(True)
+        widgets["text"].setObjectName("consolelog")
 
         layout = QtWidgets.QVBoxLayout(panels["central"])
         layout.setContentsMargins(0, 0, 0, 0)
@@ -239,11 +240,11 @@ class Console(AbstractDockWidget):
 
     def append(self, line, level=logging.INFO):
         color = {
-            logging.DEBUG: "<font color=\"grey\">",
+            logging.DEBUG: "<font color=\"lightgrey\">",
             logging.WARNING: "<font color=\"darkorange\">",
             logging.ERROR: "<font color=\"red\">",
             logging.CRITICAL: "<font color=\"red\">",
-        }.get(level, "<font color=\"#222\">")
+        }.get(level, "<font color=\"grey\">")
 
         line = line.replace(" ", "&nbsp;")
         line = line.replace("\n", "<br>")
@@ -958,11 +959,8 @@ class Preferences(AbstractDockWidget):
 
         qargparse.Separator("Theme"),
 
-        qargparse.Info("primaryColor", default="white", help=(
-            "Main color of the GUI"
-        )),
-        qargparse.Info("secondaryColor", default="steelblue", help=(
-            "Secondary color of the GUI"
+        qargparse.Enum("palette", items=list(res.load_palettes()), help=(
+            "Main colors of the GUI"
         )),
 
         qargparse.Button("resetLayout", help=(
@@ -1080,12 +1078,9 @@ class Preferences(AbstractDockWidget):
         self._window.on_setting_changed(argument)
 
     def on_css_applied(self, css):
-        from . import resources
-        with open(resources.find("style.css")) as f:
-            originalcss = f.read()
         self._ctrl.state.store("userCss", css)
         self._window.setStyleSheet("\n".join([
-            originalcss, css]))
+            self._window._originalcss, css]))
         self._window.tell("Applying css..")
 
 

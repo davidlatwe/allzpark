@@ -446,6 +446,12 @@ class Window(QtWidgets.QMainWindow):
             allzparkconfig.exclude_filter = value
             self._ctrl.reset()
 
+        if key == "palette":
+            user_css = self._ctrl.state.retrieve("userCss", "")
+            originalcss = res.load_style(value)
+            self.setStyleSheet("\n".join([originalcss, user_css]))
+            self._originalcss = originalcss
+
     def on_dock_toggled(self, dock, visible):
         """Make toggled dock the active dock"""
 

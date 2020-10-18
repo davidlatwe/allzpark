@@ -4,7 +4,7 @@ import logging
 from collections import OrderedDict as odict
 from Qt import QtCore, QtWidgets, QtGui
 
-__version__ = "0.5.3"
+__version__ = "0.5.4"
 _log = logging.getLogger(__name__)
 _type = type  # used as argument
 
@@ -709,7 +709,7 @@ class Enum(QArgument):
             lambda index: self.changed.emit())
 
         self._read = lambda: widget.currentText()
-        self._write = lambda value: widget.setCurrentIndex(value)
+        self._write = lambda value: widget.setCurrentText(value)
 
         if self["default"] is not None:
             self._write(self["default"])
