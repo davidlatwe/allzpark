@@ -44,7 +44,7 @@ class AbstractDockWidget(QtWidgets.QDockWidget):
         central = QtWidgets.QWidget()
 
         layout = QtWidgets.QVBoxLayout(central)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(px(5))
         layout.addWidget(panels["help"])
         layout.addWidget(panels["body"])

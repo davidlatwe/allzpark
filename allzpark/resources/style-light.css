@@ -6,10 +6,13 @@ B3BABD
 AEAEAF
 
 black
+darkSlateGray
 
 ddd
 111
 ADD9F2
+
+https://www.w3.org/TR/SVG11/types.html#ColorKeywords
 */
 
 
@@ -22,8 +25,8 @@ ADD9F2
 
 
 QWidget:disabled {
-    border: 1px solid #AEAEAF;
-    background: #B3BABD;
+    border: none;
+    color: darkSlateGray;
 }
 
 QMenu, QLabel {
@@ -40,6 +43,14 @@ QPushButton {
 
 QPushButton:hover {
     border: 1px solid #ADD9F2;
+}
+
+QPushButton:pressed {
+    background: #ADD9F2;
+}
+
+QAbstractScrollArea {
+    background: #D7D8D2;
 }
 
 QTextEdit, QLineEdit {
@@ -70,6 +81,11 @@ Window #header QComboBox {
 Window #header QPushButton[type=toggle] {
     border: none;
     background: transparent;
+    margin: 1px;
+}
+
+Window #header QPushButton[type=toggle]:checked {
+    background: #E9EAE6;
 }
 
 Window #header QPushButton[type=toggle]:hover {
@@ -121,6 +137,26 @@ Window #body QLineEdit {
     margin: 3px;
 }
 
+FullCommand QLineEdit {
+  color: rgba(0, 0, 0, 0.2);
+}
+
+FullCommand QComboBox {
+    background: silver;
+    color: #222;
+    border: none;
+    padding: 2px;
+    padding-right: 0px;
+}
+
+FullCommand QComboBox::drop-down {
+    border: none;
+}
+
+FullCommand QComboBox::down-arrow {
+    image: url(%(res)s/Logo_64.png);
+}
+
 #launchBtn {
     height: 30px;
     margin: 0;
@@ -129,7 +165,7 @@ Window #body QLineEdit {
 }
 
 QAbstractItemView {
-    background: #E9EAE6;
+    background: #DBDFDE;
     border: 1px solid #B3BABD;
     selection-background-color: #ddd;
     selection-color: #111;
@@ -195,12 +231,12 @@ Profiles QPushButton:hover {
 
 /* Docks */
 Context #generateGraph {
-   max-width: 60px;
+    max-width: 60px;
     min-width: 60px;
     max-height: 20px;
 }
 
-/* Risky, dependent on font and plaform */
+/* Risky, dependent on font and platform */
 Context #overlay {
     max-width: 200px;
     min-width: 200px;
@@ -209,7 +245,8 @@ Context #overlay {
 }
 
 QDockWidget {
-    border: 1px solid #B3BABD;
+    background: #D7D8D2;
+	border: 1px solid #B3BABD;
 }
 
 QDockWidget::title {
@@ -221,7 +258,6 @@ QDockWidget::float-button, QDockWidget::close-button {
 }
 
 QDockWidget #dockHelp {
-    background: transparent;
     border: none;
     padding: 5px;
 }
@@ -253,7 +289,7 @@ Options #label {
 }
 
 QToolBar {
-    border: none;   
+    border: none;
 }
 
 QToolButton {
@@ -289,6 +325,7 @@ QTabBar::tab:top {
 
 QTabBar::tab:top:!selected
 {
+    color: darkSlateGray;
     background-color: #D7D8D2;
     border-top-left-radius: 0px;
     border-top-right-radius: 0px;
@@ -310,15 +347,15 @@ QTabBar::tab:top:last {
 
 QScrollBar:horizontal
 {
-    background-color: #DBDFDE;
+    background-color: #B3BABD;
     height: 15px;
     border: none;
-    border-top: 1px solid #B3BABD;
+    border-top: 1px solid #AEAEAF;
 }
 
 QScrollBar::handle:horizontal
 {
-    background-color: #AEAEAF;
+    background-color: #DBDFDE;
     min-width: 20px;
 }
 
@@ -336,15 +373,15 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
 
 QScrollBar:vertical
 {
-    background-color: #DBDFDE;
+    background-color: #B3BABD;
     width: 15px;
     border: none;
-    border-left: 1px solid #B3BABD;
+    border-left: 1px solid #AEAEAF;
 }
 
 QScrollBar::handle:vertical
 {
-    background-color: #AEAEAF;
+    background-color: #DBDFDE;
     min-height: 20px;
 }
 
