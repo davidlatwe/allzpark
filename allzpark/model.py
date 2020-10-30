@@ -189,18 +189,17 @@ class ApplicationModel(AbstractTableModel):
         self.beginResetModel()
         self.items[:] = []
 
-        for app in applications:
-            root = app.root
-
+        for rez_app in applications:
+            app = rez_app.package()
+            tools = rez_app.tools()
             data = allzparkconfig.metadata_from_package(app)
-            tools = getattr(app, "tools", None) or [app.name]
-            app_request = "%s==%s" % (app.name, app.version)
+            # TODO: suite tool should display it's tool name or label
 
             item = {
-                "name": app_request,
+                "name": rez_app.app_request(),
                 "label": data["label"],
                 "version": str(app.version),
-                "icon": parse_icon(root, template=data["icon"]),
+                "icon": parse_icon(app.root, template=data["icon"]),
                 "package": app,
                 "context": None,
                 "active": True,

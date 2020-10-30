@@ -6,6 +6,7 @@ from rez.package_copy import copy_package
 from rez.package_filter import Rule, PackageFilterList
 from rez.package_repository import package_repository_manager
 from rez.packages_ import Package
+from rez.suite import Suite
 from rez.utils.formatting import PackageRequest
 from rez.config import config
 from rez.util import which
@@ -19,6 +20,7 @@ from rez.exceptions import (
     PackageRequestError,
     PackageNotFoundError,
     RezError,
+    SuiteError,
 )
 from rez.utils.graph_utils import save_graph
 
@@ -45,6 +47,51 @@ def find_latest(name, range_=None, paths=None):
         )
 
 
+def is_from_suite(package):
+    return package.context and package.context.suite_context_name
+
+
+def uni_request_key(package, tool_entry=None):
+    app_request = "%s==%s" % (package.name, package.version)
+    if tool_entry:
+        prefix = "%s::%s::" % (
+            tool_entry["tool_alias"], tool_entry["context_name"])
+        app_request = prefix + app_request
+
+    return app_request
+
+
+class RezApp(object):
+
+    def __init__(self, package, app_request):
+        in_suite = is_from_suite(package)
+        if in_suite:
+            tool_alias, _ = app_request.split("::", 1)
+            tools = [tool_alias]
+        else:
+            tools = getattr(package, "tools", None or [package.name])
+
+        self._package = package
+        self._tools = tools
+        self._in_suite = in_suite
+        self._uni_request_key = app_request
+
+    def __repr__(self):
+        return "RezApp(%s)" % self._uni_request_key
+
+    def package(self):
+        return self._package
+
+    def tools(self):
+        return self._tools
+
+    def is_suite_tool(self):
+        return self._in_suite
+
+    def app_request(self):
+        return self._uni_request_key
+
+
 try:
     from rez import project
 except ImportError:
@@ -57,6 +104,7 @@ __all__ = [
     "find",
     "find_one",
     "find_latest",
+    "uni_request_key",
     "config",
     "version",
     "project",
@@ -66,6 +114,8 @@ __all__ = [
     # Classes
     "Package",
     "PackageRequest",
+    "Suite",
+    "RezApp",
 
     # Exceptions
     "PackageFamilyNotFoundError",
@@ -76,6 +126,7 @@ __all__ = [
     "PackageNotFoundError",
     "PackageRequestError",
     "RezError",
+    "SuiteError",
 
     # Filters
     "Rule",

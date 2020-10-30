@@ -3,6 +3,7 @@
 import os
 import sys
 import time
+import json
 import signal
 import logging
 import argparse
@@ -72,6 +73,111 @@ def _patch_allzparkconfig():
 
         setattr(allzparkconfig, "_%s" % member,
                 getattr(allzparkconfig, member))
+
+
+def _find_rez_bin_in_context():
+    """Search in resolved context
+    """
+    from rez.system import system
+
+    if system.platform == "windows":
+        bin_dir = "Scripts"
+        feature = {"activate", "rez", "pip.exe", "python.exe"}
+    else:
+        bin_dir = "bin"
+        feature = {"activate", "rez", "pip", "python"}
+
+    def up(path):
+        return os.path.dirname(path)
+
+    def validate(path):
+        validation_file = os.path.join(path, ".rez_production_install")
+        return os.path.exists(validation_file)
+
+    current = os.path.dirname(os.environ["REZ_USED"])
+    while True:
+        if bin_dir not in os.listdir(current):
+            parent_dir = up(current)
+            if current == parent_dir:
+                break  # reached to root
+            current = parent_dir
+        else:
+            found = os.path.join(current, bin_dir)
+            content = set(os.listdir(found))
+            bin_path = os.path.join(found, "rez")
+            if content.issuperset(feature) and validate(bin_path):
+                return bin_path
+
+
+def _patch_rez_bin_path():
+    """
+    """
+    import rez
+    from rez.system import system
+    from rez.utils import data_utils
+
+    rez_bin_path = system.rez_bin_path
+    is_rez_used = "REZ_USED" in os.environ
+    found_in_resolved = None
+
+    if rez_bin_path:
+        return "running in production install."
+
+    if is_rez_used:
+        found_in_resolved = _find_rez_bin_in_context()
+        if not found_in_resolved:
+            return "rez binary path not found."
+    else:
+        return "not in a resolved context."
+
+    @contextlib.contextmanager
+    def mock_rez_module_root():
+        try:
+            rez_module_root = rez.__path__[0]
+            mock_root = os.path.dirname(os.path.dirname(found_in_resolved))
+            rez.__path__[0] = os.path.join(mock_root, "lib")
+            yield
+        finally:
+            rez.__path__[0] = rez_module_root
+
+    with mock_rez_module_root():
+        data_utils.cached_property.uncache(system, "rez_bin_path")
+        return system.rez_bin_path
+
+
+def _resolve_native_environ():
+    """Resolve native shell environ
+
+    If Allzpark is launched in a Rez resolved context, need to compute the
+    original environment so the application can be launched in a proper
+    parent environment.
+
+    """
+    from rez.resolved_context import ResolvedContext
+
+    rxt = os.getenv("REZ_RXT_FILE")
+    if not rxt:
+        return
+
+    current = ResolvedContext.load(rxt)
+    current.append_sys_path = False
+
+    history = current.get_environ()
+    changed = os.environ.copy()
+    rollbacked = dict()
+
+    for key, value in changed.items():
+        changed_paths = value.split(os.pathsep)
+        history_paths = history.get(key, "").split(os.pathsep)
+        roll_paths = []
+        for path in changed_paths:
+            if path not in history_paths:
+                roll_paths.append(path)
+
+        if roll_paths:
+            rollbacked[key] = os.pathsep.join(roll_paths)
+
+    return rollbacked
 
 
 @contextlib.contextmanager
@@ -210,6 +316,16 @@ def main():
             tell("ERROR: allzpark requires rez")
             exit(1)
 
+    with timings("    + Resolving Native Environment.. ") as msg:
+        res = _resolve_native_environ()
+        native_environ = res or os.environ.copy()
+        msg["success"] = "ok {:.2f} (%s)\n" % "solved" if res else "skipped"
+
+    with timings("    + Patching Rez Binary Path.. ") as msg:
+        res = _patch_rez_bin_path()
+        msg["success"] = "ok {:.2f} (%s)\n" % res
+        # TODO: print production installed Rez version and the one in package
+
     with timings("- Loading Qt.. ") as msg:
         try:
             from .vendor import Qt
@@ -309,6 +425,7 @@ def main():
 
     app = QtWidgets.QApplication([])
     ctrl = control.Controller(storage)
+    ctrl.state["nativeEnviron"] = native_environ
 
     # Handle stdio from within the application if necessary
     if hasattr(allzparkconfig, "__noconsole__"):
