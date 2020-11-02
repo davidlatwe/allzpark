@@ -66,6 +66,9 @@ class State(dict):
             # Cache, for performance only
             "rezEnvirons": {},
 
+            # Parent environment for all applications
+            "nativeEnviron": None,
+
             "rezApps": odict(),
             "fullCommand": "rez env",
             "serialisationMode": (
@@ -305,15 +308,18 @@ class Controller(QtCore.QObject):
             return env[app_request]
 
         except KeyError:
+            context = ctx[app_request]
+            context.append_sys_path = False
             try:
-                environ = ctx[app_request].get_environ()
-                env[app_request] = environ
-                return environ
+                environ = context.get_environ()
 
             except rez.ResolvedContextError:
                 return {
                     "error": "Failed context"
                 }
+            else:
+                env[app_request] = environ
+                return environ
 
     def resolved_packages(self, app_request):
         return self._state["rezContexts"][app_request].resolved_packages
@@ -466,11 +472,11 @@ class Controller(QtCore.QObject):
 
             yield pkg
 
-    def env(self, request, use_filter=True):
+    def env(self, requests, use_filter=True):
         """Resolve context, relative Allzpark state
 
         Arguments:
-            request (str): Fully formatted request, including any
+            requests (list): Fully formatted request, including any
                 number of packages. E.g. "six==1.2 PySide2"
             use_filter (bool, optional): Whether or not to apply
                 the current package_filter
@@ -481,7 +487,7 @@ class Controller(QtCore.QObject):
         paths = self._package_paths()
 
         return rez.env(
-            request,
+            requests,
             package_paths=paths,
             package_filter=package_filter if use_filter else None
         )
@@ -692,7 +698,14 @@ class Controller(QtCore.QObject):
 
             overrides = self._models["packages"]._overrides
             disabled = self._models["packages"]._disabled
-            environ = self._state.retrieve("userEnv", {})
+            environ = self._state["nativeEnviron"].copy()
+            # Inject user environment
+            #
+            # NOTE: Rez takes precendence on environment, so a user
+            # cannot edit the environment in such a way that packages break.
+            # However it also means it cannot edit variables also edited
+            # by a package. Win some lose some
+            environ = dict(environ, **self._state.retrieve("userEnv", {}))
 
             self.debug(
                 "Launching %s%s.." % (
@@ -1190,20 +1203,11 @@ class Command(QtCore.QObject):
             "command": self.cmd,
             "stdout": subprocess.PIPE,
             "stderr": subprocess.PIPE,
-            "parent_environ": None,
+            "parent_environ": self.environ,
             "startupinfo": startupinfo
         }
 
         context = self.context
-
-        if self.environ:
-            # Inject user environment
-            #
-            # NOTE: Rez takes precendence on environment, so a user
-            # cannot edit the environment in such a way that packages break.
-            # However it also means it cannot edit variables also edited
-            # by a package. Win some lose some
-            kwargs["parent_environ"] = dict(os.environ, **self.environ)
 
         try:
             self.popen = context.execute_shell(**kwargs)
