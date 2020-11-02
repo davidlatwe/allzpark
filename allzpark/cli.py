@@ -3,7 +3,6 @@
 import os
 import sys
 import time
-import json
 import signal
 import logging
 import argparse
@@ -154,28 +153,46 @@ def _resolve_native_environ():
 
     """
     from rez.resolved_context import ResolvedContext
+    from rez.config import config
+    from rez.shells import create_shell
+
+    if not config.get("inherit_parent_environment", True):
+        # bleeding-rez
+        sh = create_shell()
+        return sh.environment()
 
     rxt = os.getenv("REZ_RXT_FILE")
     if not rxt:
         return
 
+    @contextlib.contextmanager
+    def exclude_rez_bin_path():
+        """Rez tools will be resolved in app context"""
+        mode = config.rez_tools_visibility
+        try:
+            config.rez_tools_visibility = "never"
+            yield
+        finally:
+            config.rez_tools_visibility = mode
+
     current = ResolvedContext.load(rxt)
     current.append_sys_path = False
 
-    history = current.get_environ()
-    changed = os.environ.copy()
-    rollbacked = dict()
+    with exclude_rez_bin_path():
+        history = current.get_environ()
+        changed = os.environ.copy()
+        rollbacked = dict()
 
-    for key, value in changed.items():
-        changed_paths = value.split(os.pathsep)
-        history_paths = history.get(key, "").split(os.pathsep)
-        roll_paths = []
-        for path in changed_paths:
-            if path not in history_paths:
-                roll_paths.append(path)
+        for key, value in changed.items():
+            changed_paths = value.split(os.pathsep)
+            history_paths = history.get(key, "").split(os.pathsep)
+            roll_paths = []
+            for path in changed_paths:
+                if path not in history_paths:
+                    roll_paths.append(path)
 
-        if roll_paths:
-            rollbacked[key] = os.pathsep.join(roll_paths)
+            if roll_paths:
+                rollbacked[key] = os.pathsep.join(roll_paths)
 
     return rollbacked
 
@@ -316,15 +333,15 @@ def main():
             tell("ERROR: allzpark requires rez")
             exit(1)
 
-    with timings("    + Resolving Native Environment.. ") as msg:
-        res = _resolve_native_environ()
-        native_environ = res or os.environ.copy()
-        msg["success"] = "ok {:.2f} (%s)\n" % "solved" if res else "skipped"
-
     with timings("    + Patching Rez Binary Path.. ") as msg:
         res = _patch_rez_bin_path()
         msg["success"] = "ok {:.2f} (%s)\n" % res
         # TODO: print production installed Rez version and the one in package
+
+    with timings("    + Resolving Native Environment.. ") as msg:
+        res = _resolve_native_environ()
+        native_environ = res or os.environ.copy()
+        msg["success"] = "ok {:.2f} (%s)\n" % ("solved" if res else "skipped")
 
     with timings("- Loading Qt.. ") as msg:
         try:

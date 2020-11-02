@@ -310,11 +310,9 @@ class Controller(QtCore.QObject):
 
         except KeyError:
             context = ctx[app_request]
-            restore = context.append_sys_path
+            context.append_sys_path = False
             try:
-                context.append_sys_path = False
                 environ = context.get_environ()
-                context.append_sys_path = restore
 
             except rez.ResolvedContextError:
                 return {
