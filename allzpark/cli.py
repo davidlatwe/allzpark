@@ -108,11 +108,10 @@ def _find_rez_bin_in_context():
                 return bin_path
 
 
-def _patch_rez_bin_path():
+def _patch_rez_bin_path(system):
     """
     """
     import rez
-    from rez.system import system
     from rez.utils import data_utils
 
     rez_bin_path = system.rez_bin_path
@@ -334,9 +333,10 @@ def main():
             exit(1)
 
     with timings("    + Patching Rez Binary Path.. ") as msg:
-        res = _patch_rez_bin_path()
+        from rez.system import system
+        res = _patch_rez_bin_path(system)
+        _rez_bin_path = system.rez_bin_path
         msg["success"] = "ok {:.2f} (%s)\n" % res
-        # TODO: print production installed Rez version and the one in package
 
     with timings("    + Resolving Native Environment.. ") as msg:
         res = _resolve_native_environ()
@@ -410,6 +410,7 @@ def main():
             "qtBinding": Qt.__binding__,
             "qtBindingVersion": Qt.__qt_version__,
             "rezLocation": os.path.dirname(_rez_location),
+            "rezBinPath": _rez_bin_path,
             "rezVersion": _rez_version,
             "rezConfigFile": os.getenv("REZ_CONFIG_FILE", "None"),
             "rezPackagesPath": config.packages_path,

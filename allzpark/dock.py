@@ -1039,6 +1039,7 @@ class Preferences(AbstractDockWidget):
         qargparse.Info("qtBinding"),
         qargparse.Info("qtBindingVersion"),
         qargparse.Info("rezLocation"),
+        qargparse.Info("rezBinPath"),
         qargparse.Info("rezVersion"),
         qargparse.Info("rezConfigFile"),
         qargparse.Info("memcachedURI"),

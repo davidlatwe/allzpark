@@ -69,7 +69,7 @@ class RezApp(object):
             tool_alias, _ = app_request.split("::", 1)
             tools = [tool_alias]
         else:
-            tools = getattr(package, "tools", None or [package.name])
+            tools = getattr(package, "tools", None) or [package.name]
 
         self._package = package
         self._tools = tools
