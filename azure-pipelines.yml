@@ -203,37 +203,37 @@ jobs:
           versionSpec: "$(python.version)"
         displayName: "Use Python $(python.version)"
 
-      - powershell: |
+      - script: |
           python -m pip install --upgrade pip setuptools wheel
         displayName: "Install tools"
 
-      - powershell: |
+      - script: |
           git clone https://github.com/nerdvegas/rez.git rez-src
           cd rez-src
           pip install .
         condition: eq(variables['rez.project'], 'rez')
         displayName: "pip install rez (for API)"
 
-      - powershell: |
+      - script: |
           pip install bleeding-rez
         condition: eq(variables['rez.project'], 'bleeding-rez')
         displayName: "pip install bleeding-rez"
 
-      - powershell: |
+      - script: |
           pip install PySide
         condition: startsWith(variables['python.version'], '2.')
         displayName: "pip install PySide"
 
-      - powershell: |
+      - script: |
           pip install PySide2
         condition: startsWith(variables['python.version'], '3.')
         displayName: "pip install PySide2"
 
-      - powershell: |
+      - script: |
           pip install . --no-deps
         displayName: "pip install"
 
-      - powershell: |
+      - script: |
           python -m unittest discover
         displayName: "run tests"
 
