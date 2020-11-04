@@ -15,7 +15,6 @@ def wait(signal, on_value=None, timeout=1000):
     from allzpark.vendor.Qt import QtCore
 
     loop = QtCore.QEventLoop()
-    timer = QtCore.QTimer()
     state = {"timeout": True}
 
     if on_value:
@@ -29,9 +28,8 @@ def wait(signal, on_value=None, timeout=1000):
             state["timeout"] = False
 
     signal.connect(trigger)
-    timer.timeout.connect(loop.quit)
 
-    timer.start(timeout)
+    QtCore.QTimer.singleShot(timeout, loop.quit)
     loop.exec_()
 
     if state["timeout"]:
