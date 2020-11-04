@@ -29,7 +29,7 @@ jobs:
 
   - job: Ubuntu
     pool:
-      vmImage: "ubuntu-16.04"  # Xenial
+      vmImage: "ubuntu-18.04"  # Xenial
     strategy:
       matrix:
         Python27-Rez:
@@ -151,7 +151,7 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
-          sudo brew install qt
+          brew install qt
           pip install PySide
         condition: startsWith(variables['python.version'], '2.')
         displayName: "pip install PySide"
