@@ -100,13 +100,10 @@ jobs:
 
       - script: |
           sudo apt-get install xvfb
-          Xvfb :99 &
-          export DISPLAY=:99
-          sleep 3 # give xvfb some time to start
         displayName: "Setup Xvfb"
 
       - script: |
-          sudo python -m unittest discover
+          sudo xvfb-run python -m unittest discover
         displayName: "run tests"
 
 
