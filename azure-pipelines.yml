@@ -137,8 +137,11 @@ jobs:
         displayName: "pip install allzpark"
 
       - script: |
-          export QT_QPA_PLATFORM=offscreen
-          sudo python -m unittest discover
+          sudo apt-get install xvfb
+        displayName: "Setup Xvfb"
+
+      - script: |
+          xvfb-run sudo python -m unittest discover
         displayName: "run tests"
 
   - job: MacOS
