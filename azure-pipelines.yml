@@ -83,6 +83,10 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
+          pip install PyQt5
+        displayName: "pip install PyQt5"
+
+      - script: |
           pip install . --no-deps
         displayName: "pip install allzpark"
 
