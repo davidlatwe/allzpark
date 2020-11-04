@@ -32,14 +32,37 @@ jobs:
       vmImage: "ubuntu-16.04"  # Xenial
     strategy:
       matrix:
-        Python27:
+        Python27-Rez:
           python.version: "2.7"
-        Python35:
+          rez.project: "rez"
+
+        Python27-BleedingRez:
+          python.version: "2.7"
+          rez.project: "bleeding-rez"
+
+        Python35-Rez:
           python.version: "3.5"
-        Python36:
+          rez.project: "rez"
+
+        Python35-BleedingRez:
+          python.version: "3.5"
+          rez.project: "bleeding-rez"
+
+        Python36-Rez:
           python.version: "3.6"
-        Python37:
+          rez.project: "rez"
+
+        Python36-BleedingRez:
+          python.version: "3.6"
+          rez.project: "bleeding-rez"
+
+        Python37-Rez:
           python.version: "3.7"
+          rez.project: "rez"
+
+        Python37-BleedingRez:
+          python.version: "3.7"
+          rez.project: "bleeding-rez"
 
     steps:
       - task: UsePythonVersion@0
@@ -48,8 +71,24 @@ jobs:
         displayName: "Use Python $(python.version)"
 
       - script: |
+          git clone https://github.com/nerdvegas/rez.git
+          cd rez
+          python ./install.py
+        condition: $[eq(rez.project, 'rez')]
+        displayName: "install rez"
+
+      - script: |
+          pip install bleeding-rez
+        condition: $[eq(rez.project, 'bleeding-rez')]
+        displayName: "pip install bleeding-rez"
+
+      - script: |
           pip install . --no-deps
-        displayName: "pip install"
+        displayName: "pip install allzpark"
+
+      - script: |
+          pip install . --no-deps
+        displayName: "run tests"
 
 
   - job: MacOS
