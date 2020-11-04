@@ -74,12 +74,12 @@ jobs:
           git clone https://github.com/nerdvegas/rez.git
           cd rez
           python ./install.py
-        condition: eq(rez.project, 'rez')
+        condition: eq(variables['rez.project'], 'rez')
         displayName: "install rez"
 
       - script: |
           pip install bleeding-rez
-        condition: eq(rez.project, 'bleeding-rez')
+        condition: eq(variables['rez.project'], 'bleeding-rez')
         displayName: "pip install bleeding-rez"
 
       - script: |
