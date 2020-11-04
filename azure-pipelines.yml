@@ -88,12 +88,13 @@ jobs:
 
       - script: |
           sudo apt-get install python-pyside
-          sudo python -c "import PySide.QtCore"
+          sudo python -c "from PySide import QtCore;print(QtCore.__version__)"
         condition: startsWith(variables['python.version'], '2.')
         displayName: "pip install PySide"
 
       - script: |
           sudo apt-get install python3-pyside2
+          sudo python -c "from PySide2 import QtCore;print(QtCore.__version__)"
         condition: startsWith(variables['python.version'], '3.')
         displayName: "pip3 install PySide2"
 
@@ -102,7 +103,7 @@ jobs:
         displayName: "pip install allzpark"
 
       - script: |
-          python -m unittest discover
+          sudo python -m unittest discover
         displayName: "run tests"
 
 
