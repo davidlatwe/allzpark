@@ -71,11 +71,11 @@ jobs:
         displayName: "Use Python $(python.version)"
 
       - script: |
-          git clone https://github.com/nerdvegas/rez.git
-          cd rez
-          python ./install.py
+          git clone https://github.com/nerdvegas/rez.git rez-src
+          cd rez-src
+          pip install .
         condition: eq(variables['rez.project'], 'rez')
-        displayName: "install rez"
+        displayName: "pip install rez (for API)"
 
       - script: |
           pip install bleeding-rez
@@ -87,7 +87,7 @@ jobs:
         displayName: "pip install allzpark"
 
       - script: |
-          pip install . --no-deps
+          python -m unittest discover
         displayName: "run tests"
 
 
