@@ -83,7 +83,7 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
-          apt install p7zip
+          sudo apt install p7zip
           pip install aqtinstall
           aqt install --outputdir /opt 4.8.5 linux desktop
           pip install PySide
