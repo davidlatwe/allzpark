@@ -71,10 +71,6 @@ jobs:
         displayName: "Use Python $(python.version)"
 
       - script: |
-          sudo python -m pip install --upgrade pip setuptools wheel
-        displayName: "Install tools"
-
-      - script: |
           git clone https://github.com/nerdvegas/rez.git rez-src
           cd rez-src
           sudo pip install .
@@ -135,10 +131,6 @@ jobs:
         displayName: "Use Python $(python.version)"
 
       - script: |
-          python -m pip install --upgrade pip setuptools wheel
-        displayName: "Install tools"
-
-      - script: |
           git clone https://github.com/nerdvegas/rez.git rez-src
           cd rez-src
           pip install .
@@ -196,10 +188,6 @@ jobs:
         inputs:
           versionSpec: "$(python.version)"
         displayName: "Use Python $(python.version)"
-
-      - script: |
-          python -m pip install --upgrade pip setuptools wheel
-        displayName: "Install tools"
 
       - script: |
           git clone https://github.com/nerdvegas/rez.git rez-src
