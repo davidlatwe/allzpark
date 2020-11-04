@@ -99,8 +99,13 @@ jobs:
         displayName: "pip install allzpark"
 
       - script: |
-          xhost local:root
-          sudo DISPLAY=$DISPLAY gedit /etc/profile
+          sudo apt-get install xvfb
+          Xvfb :99 &
+          export DISPLAY=:99
+          sleep 3 # give xvfb some time to start
+        displayName: "Setup Xvfb"
+
+      - script: |
           sudo python -m unittest discover
         displayName: "run tests"
 
