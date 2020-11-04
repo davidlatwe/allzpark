@@ -83,8 +83,14 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
-          pip install PyQt5
-        displayName: "pip install PyQt5"
+          pip install PySide
+        condition: startsWith(variables['python.version'], '2.')
+        displayName: "pip install PySide"
+
+      - script: |
+          pip install PySide2
+        condition: startsWith(variables['python.version'], '3.')
+        displayName: "pip install PySide2"
 
       - script: |
           pip install . --no-deps
