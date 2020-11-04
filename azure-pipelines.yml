@@ -71,18 +71,18 @@ jobs:
         displayName: "Use Python $(python.version)"
 
       - script: |
-          python -m pip install --upgrade pip setuptools wheel
+          sudo python -m pip install --upgrade pip setuptools wheel
         displayName: "Install tools"
 
       - script: |
           git clone https://github.com/nerdvegas/rez.git rez-src
           cd rez-src
-          pip install .
+          sudo pip install .
         condition: eq(variables['rez.project'], 'rez')
         displayName: "pip install rez (for API)"
 
       - script: |
-          pip install bleeding-rez
+          sudo pip install bleeding-rez
         condition: eq(variables['rez.project'], 'bleeding-rez')
         displayName: "pip install bleeding-rez"
 
@@ -99,7 +99,7 @@ jobs:
         displayName: "pip3 install PySide2"
 
       - script: |
-          pip install . --no-deps
+          sudo pip install . --no-deps
         displayName: "pip install allzpark"
 
       - script: |
