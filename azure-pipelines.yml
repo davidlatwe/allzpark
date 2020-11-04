@@ -32,35 +32,35 @@ jobs:
       vmImage: "ubuntu-18.04"  # Xenial
     strategy:
       matrix:
-        Python27-Rez:
+        Py27-Rez:
           python.version: "2.7"
           rez.project: "rez"
 
-        Python27-BleedingRez:
+        Py27-BleedingRez:
           python.version: "2.7"
           rez.project: "bleeding-rez"
 
-        Python35-Rez:
+        Py35-Rez:
           python.version: "3.5"
           rez.project: "rez"
 
-        Python35-BleedingRez:
+        Py35-BleedingRez:
           python.version: "3.5"
           rez.project: "bleeding-rez"
 
-        Python36-Rez:
+        Py36-Rez:
           python.version: "3.6"
           rez.project: "rez"
 
-        Python36-BleedingRez:
+        Py36-BleedingRez:
           python.version: "3.6"
           rez.project: "bleeding-rez"
 
-        Python37-Rez:
+        Py37-Rez:
           python.version: "3.7"
           rez.project: "rez"
 
-        Python37-BleedingRez:
+        Py37-BleedingRez:
           python.version: "3.7"
           rez.project: "bleeding-rez"
 
@@ -112,19 +112,19 @@ jobs:
       vmImage: "macOS-10.15"
     strategy:
       matrix:
-        Python27-Rez:
+        Py27-Rez:
           python.version: "2.7"
           rez.project: "rez"
 
-        Python27-BleedingRez:
+        Py27-BleedingRez:
           python.version: "2.7"
           rez.project: "bleeding-rez"
 
-        Python37-Rez:
+        Py37-Rez:
           python.version: "3.7"
           rez.project: "rez"
 
-        Python37-BleedingRez:
+        Py37-BleedingRez:
           python.version: "3.7"
           rez.project: "bleeding-rez"
 
