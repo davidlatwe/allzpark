@@ -99,6 +99,8 @@ jobs:
         displayName: "pip install allzpark"
 
       - script: |
+          xhost local:root
+          sudo DISPLAY=$DISPLAY gedit /etc/profile
           sudo python -m unittest discover
         displayName: "run tests"
 
