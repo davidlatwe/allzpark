@@ -83,19 +83,14 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
-          sudo apt install p7zip
-          pip install aqtinstall
-          aqt install --outputdir /opt 4.8.5 linux desktop
-          pip install PySide
+          sudo apt-get install python-pyside
         condition: startsWith(variables['python.version'], '2.')
-        displayName: "pip install PySide"
+        displayName: "apt-get install PySide"
 
       - script: |
-          pip install aqtinstall
-          aqt install --outputdir /opt 5.12.0 linux desktop
-          pip install PySide2
+          sudo apt-get install python3-pyside2
         condition: startsWith(variables['python.version'], '3.')
-        displayName: "pip install PySide2"
+        displayName: "apt-get install PySide2"
 
       - script: |
           pip install . --no-deps
