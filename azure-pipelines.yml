@@ -89,7 +89,10 @@ jobs:
         displayName: "pip install PySide"
 
       - script: |
-          sudo apt-get install python-pyside2
+          sudo apt-get install python3-pyside2.qtcore \
+                               python3-pyside2.qtgui \
+                               python3-pyside2.qtwidgets \
+                               python3-pyside2.qtsvg
           sudo python -c "from PySide2 import QtCore;print(QtCore.__version__)"
         condition: startsWith(variables['python.version'], '3.')
         displayName: "pip3 install PySide2"
