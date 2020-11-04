@@ -27,9 +27,9 @@ jobs:
   #
   # -----------------------------------------------------------------------
 
-  - job: Ubuntu
+  - job: Ubuntu16
     pool:
-      vmImage: "ubuntu-20.04"  # Focal
+      vmImage: "ubuntu-16.04"  # Xenial
     strategy:
       matrix:
         Py27-Rez:
@@ -40,6 +40,47 @@ jobs:
           python.version: "2.7"
           rez.project: "bleeding-rez"
 
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "$(python.version)"
+        displayName: "Use Python $(python.version)"
+
+      - script: |
+          git clone https://github.com/nerdvegas/rez.git rez-src
+          cd rez-src
+          sudo pip install .
+        condition: eq(variables['rez.project'], 'rez')
+        displayName: "pip install rez (for API)"
+
+      - script: |
+          sudo pip install bleeding-rez
+        condition: eq(variables['rez.project'], 'bleeding-rez')
+        displayName: "pip install bleeding-rez"
+
+      - script: |
+          sudo apt-get install python-pyside
+          sudo python -c "from PySide import QtCore;print(QtCore.__version__)"
+        condition: startsWith(variables['python.version'], '2.')
+        displayName: "pip install PySide"
+
+      - script: |
+          sudo pip install . --no-deps
+        displayName: "pip install allzpark"
+
+      - script: |
+          sudo apt-get install xvfb
+        displayName: "Setup Xvfb"
+
+      - script: |
+          xvfb-run sudo python -m unittest discover
+        displayName: "run tests"
+
+  - job: Ubuntu20
+    pool:
+      vmImage: "ubuntu-20.04"  # Focal
+    strategy:
+      matrix:
         Py35-Rez:
           python.version: "3.5"
           rez.project: "rez"
@@ -83,12 +124,6 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
-          sudo apt-get install python-pyside
-          sudo python -c "from PySide import QtCore;print(QtCore.__version__)"
-        condition: startsWith(variables['python.version'], '2.')
-        displayName: "pip install PySide"
-
-      - script: |
           sudo apt-get install python3-pyside2.qtcore \
                                python3-pyside2.qtgui \
                                python3-pyside2.qtwidgets \
@@ -102,27 +137,15 @@ jobs:
         displayName: "pip install allzpark"
 
       - script: |
-          sudo apt-get install xvfb
-        displayName: "Setup Xvfb"
-
-      - script: |
-          xvfb-run sudo python -m unittest discover
+          export QT_QPA_PLATFORM=offscreen
+          sudo python -m unittest discover
         displayName: "run tests"
-
 
   - job: MacOS
     pool:
       vmImage: "macOS-10.15"
     strategy:
       matrix:
-        Py27-Rez:
-          python.version: "2.7"
-          rez.project: "rez"
-
-        Py27-BleedingRez:
-          python.version: "2.7"
-          rez.project: "bleeding-rez"
-
         Py37-Rez:
           python.version: "3.7"
           rez.project: "rez"
@@ -148,13 +171,6 @@ jobs:
           pip install bleeding-rez
         condition: eq(variables['rez.project'], 'bleeding-rez')
         displayName: "pip install bleeding-rez"
-
-      - script: |
-          brew tap cartr/qt4
-          brew install qt@4
-          pip install PySide
-        condition: startsWith(variables['python.version'], '2.')
-        displayName: "pip install PySide"
 
       - script: |
           pip install PySide2
