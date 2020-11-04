@@ -89,7 +89,7 @@ jobs:
         displayName: "pip install PySide"
 
       - script: |
-          sudo apt-get install python3-pyside2
+          sudo apt-get install python-pyside2
           sudo python -c "from PySide2 import QtCore;print(QtCore.__version__)"
         condition: startsWith(variables['python.version'], '3.')
         displayName: "pip3 install PySide2"
@@ -103,7 +103,7 @@ jobs:
         displayName: "Setup Xvfb"
 
       - script: |
-          sudo xvfb-run python -m unittest discover
+          xvfb-run sudo python -m unittest discover
         displayName: "run tests"
 
 
