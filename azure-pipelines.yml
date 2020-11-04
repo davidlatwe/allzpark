@@ -29,7 +29,7 @@ jobs:
 
   - job: Ubuntu
     pool:
-      vmImage: "ubuntu-16.04"  # Xenial
+      vmImage: "ubuntu-20.04"  # Focal
     strategy:
       matrix:
         Py27-Rez:
