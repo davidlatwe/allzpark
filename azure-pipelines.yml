@@ -29,7 +29,7 @@ jobs:
 
   - job: Ubuntu
     pool:
-      vmImage: "ubuntu-18.04"  # Xenial
+      vmImage: "ubuntu-16.04"  # Xenial
     strategy:
       matrix:
         Py27-Rez:
@@ -87,20 +87,12 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
-          sudo apt-get install build-essential cmake python2.7-dev \
-                               libqt4-dev libphonon-dev libxml2-dev \
-                               libxslt1-dev libqtwebkit-dev
-          wget https://pypi.python.org/packages/source/P/PySide/PySide-1.2.4.tar.gz
-          tar -xvzf PySide-1.2.4.tar.gz
-          cd PySide-1.2.4
-          python setup.py bdist_wheel --qmake=/usr/bin/qmake-qt4
+          sudo apt-get install python-pyside
         condition: startsWith(variables['python.version'], '2.')
         displayName: "pip install PySide"
 
       - script: |
-          sudo apt-get install libgl-dev
-          export QT_PLUGIN_PATH=/usr/lib/qt/plugins
-          pip install PySide2
+          sudo apt-get install python3-pyside2
         condition: startsWith(variables['python.version'], '3.')
         displayName: "pip3 install PySide2"
 
