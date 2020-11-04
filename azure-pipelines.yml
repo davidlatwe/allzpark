@@ -87,12 +87,19 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
-          sudo apt-get install python-qt4
+          sudo apt-get install build-essential cmake libqt4-dev python-dev \
+                               libqt4-dev libphonon-dev libxml2-dev \
+                               libxslt1-dev qtmobility-dev libqtwebkit-dev
+          wget https://pypi.python.org/packages/source/P/PySide/PySide-1.2.4.tar.gz
+          tar -xvzf PySide-1.2.4.tar.gz
+          cd PySide-1.2.4
+          python setup.py bdist_wheel --qmake=/usr/bin/qmake-qt4
         condition: startsWith(variables['python.version'], '2.')
         displayName: "pip install PySide"
 
       - script: |
-          sudo apt-get install python3-pyqt5
+          sudo apt-get install libgl-dev python-dev
+          pip install PySide2
         condition: startsWith(variables['python.version'], '3.')
         displayName: "pip3 install PySide2"
 
@@ -173,19 +180,61 @@ jobs:
       vmImage: vs2017-win2016
     strategy:
       matrix:
-        Python27:
+        Py27-Rez:
           python.version: "2.7"
-        Python37:
+          rez.project: "rez"
+
+        Py27-BleedingRez:
+          python.version: "2.7"
+          rez.project: "bleeding-rez"
+
+        Py37-Rez:
           python.version: "3.7"
+          rez.project: "rez"
+
+        Py37-BleedingRez:
+          python.version: "3.7"
+          rez.project: "bleeding-rez"
 
     steps:
       - task: UsePythonVersion@0
         inputs:
           versionSpec: "$(python.version)"
         displayName: "Use Python $(python.version)"
+
+      - powershell: |
+          python -m pip install --upgrade pip setuptools wheel
+        displayName: "Install tools"
+
+      - powershell: |
+          git clone https://github.com/nerdvegas/rez.git rez-src
+          cd rez-src
+          pip install .
+        condition: eq(variables['rez.project'], 'rez')
+        displayName: "pip install rez (for API)"
+
+      - powershell: |
+          pip install bleeding-rez
+        condition: eq(variables['rez.project'], 'bleeding-rez')
+        displayName: "pip install bleeding-rez"
+
+      - powershell: |
+          pip install PySide
+        condition: startsWith(variables['python.version'], '2.')
+        displayName: "pip install PySide"
+
+      - powershell: |
+          pip install PySide2
+        condition: startsWith(variables['python.version'], '3.')
+        displayName: "pip install PySide2"
+
       - powershell: |
           pip install . --no-deps
         displayName: "pip install"
+
+      - powershell: |
+          python -m unittest discover
+        displayName: "run tests"
 
 
   # -----------------------------------------------------------------------
