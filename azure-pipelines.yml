@@ -83,11 +83,15 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
+          pip install aqtinstall
+          aqt install --outputdir /opt 4.8.5 linux desktop
           pip install PySide
         condition: startsWith(variables['python.version'], '2.')
         displayName: "pip install PySide"
 
       - script: |
+          pip install aqtinstall
+          aqt install --outputdir /opt 5.12.0 linux desktop
           pip install PySide2
         condition: startsWith(variables['python.version'], '3.')
         displayName: "pip install PySide2"
