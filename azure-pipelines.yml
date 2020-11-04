@@ -87,9 +87,9 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
-          sudo apt-get install build-essential cmake libqt4-dev python-dev \
+          sudo apt-get install build-essential cmake python2.7-dev \
                                libqt4-dev libphonon-dev libxml2-dev \
-                               libxslt1-dev qtmobility-dev libqtwebkit-dev
+                               libxslt1-dev libqtwebkit-dev
           wget https://pypi.python.org/packages/source/P/PySide/PySide-1.2.4.tar.gz
           tar -xvzf PySide-1.2.4.tar.gz
           cd PySide-1.2.4
@@ -98,7 +98,8 @@ jobs:
         displayName: "pip install PySide"
 
       - script: |
-          sudo apt-get install libgl-dev python-dev
+          sudo apt-get install libgl-dev
+          export QT_PLUGIN_PATH=/usr/lib/qt/plugins
           pip install PySide2
         condition: startsWith(variables['python.version'], '3.')
         displayName: "pip3 install PySide2"
