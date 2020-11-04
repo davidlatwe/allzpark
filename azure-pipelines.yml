@@ -87,14 +87,12 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
-          sudo apt-get install qt4-default libxcb-xinerama0
-          pip install PySide
+          sudo apt-get install python-qt4
         condition: startsWith(variables['python.version'], '2.')
         displayName: "pip install PySide"
 
       - script: |
-          sudo apt-get install libxcb-xinerama0
-          pip install PySide2
+          sudo apt-get install python3-pyqt5
         condition: startsWith(variables['python.version'], '3.')
         displayName: "pip3 install PySide2"
 
@@ -151,7 +149,8 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
-          brew install qt
+          brew tap cartr/qt4
+          brew install qt@4
           pip install PySide
         condition: startsWith(variables['python.version'], '2.')
         displayName: "pip install PySide"
