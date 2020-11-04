@@ -71,6 +71,10 @@ jobs:
         displayName: "Use Python $(python.version)"
 
       - script: |
+          python -m pip install --upgrade pip setuptools wheel
+        displayName: "Install tools"
+
+      - script: |
           git clone https://github.com/nerdvegas/rez.git rez-src
           cd rez-src
           pip install .
@@ -83,12 +87,13 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
-          sudo pip install PySide
+          sudo apt-get install python-pyside
+          pip install PySide
         condition: startsWith(variables['python.version'], '2.')
         displayName: "pip install PySide"
 
       - script: |
-          sudo pip3 install PySide2
+          pip install PySide2
         condition: startsWith(variables['python.version'], '3.')
         displayName: "pip3 install PySide2"
 
@@ -106,10 +111,21 @@ jobs:
       vmImage: "macOS-10.15"
     strategy:
       matrix:
-        Python27:
+        Python27-Rez:
           python.version: "2.7"
-        Python37:
+          rez.project: "rez"
+
+        Python27-BleedingRez:
+          python.version: "2.7"
+          rez.project: "bleeding-rez"
+
+        Python37-Rez:
           python.version: "3.7"
+          rez.project: "rez"
+
+        Python37-BleedingRez:
+          python.version: "3.7"
+          rez.project: "bleeding-rez"
 
     steps:
       - task: UsePythonVersion@0
@@ -118,8 +134,38 @@ jobs:
         displayName: "Use Python $(python.version)"
 
       - script: |
+          python -m pip install --upgrade pip setuptools wheel
+        displayName: "Install tools"
+
+      - script: |
+          git clone https://github.com/nerdvegas/rez.git rez-src
+          cd rez-src
+          pip install .
+        condition: eq(variables['rez.project'], 'rez')
+        displayName: "pip install rez (for API)"
+
+      - script: |
+          pip install bleeding-rez
+        condition: eq(variables['rez.project'], 'bleeding-rez')
+        displayName: "pip install bleeding-rez"
+
+      - script: |
+          pip install PySide
+        condition: startsWith(variables['python.version'], '2.')
+        displayName: "pip install PySide"
+
+      - script: |
+          pip install PySide2
+        condition: startsWith(variables['python.version'], '3.')
+        displayName: "pip3 install PySide2"
+
+      - script: |
           pip install . --no-deps
-        displayName: "pip install"
+        displayName: "pip install allzpark"
+
+      - script: |
+          python -m unittest discover
+        displayName: "run tests"
 
   - job: Windows
     pool:
