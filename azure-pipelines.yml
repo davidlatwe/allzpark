@@ -88,6 +88,7 @@ jobs:
 
       - script: |
           sudo apt-get install python-pyside
+          locate PySide
         condition: startsWith(variables['python.version'], '2.')
         displayName: "pip install PySide"
 
