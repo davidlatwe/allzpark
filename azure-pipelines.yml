@@ -72,7 +72,7 @@ jobs:
 
       - script: |
           sudo apt-get install xserver-xorg-video-dummy x11-apps
-          curl -o Xdummy http://www.karlrunge.com/x11vnc/Xdummy
+          curl -o Xdummy https://gist.githubusercontent.com/davidlatwe/c4c1e9c47bc2e166824939262b7eacad/raw/c944a202b2b2a0fc63d842bb294a8194e5bb9317/Xdummy
           chmod +x Xdummy
         displayName: "Setup Xvfb"
 
