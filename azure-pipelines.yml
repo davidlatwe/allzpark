@@ -71,12 +71,13 @@ jobs:
         displayName: "pip install allzpark"
 
       - script: |
-          sudo apt-get install xvfb
-          which xvfb-run
+          curl -o Xdummy http://www.karlrunge.com/x11vnc/Xdummy
+          chmod +x Xdummy
         displayName: "Setup Xvfb"
 
       - script: |
-          xvfb-run sudo python -m unittest discover
+          ./Xdummy :99 -geometry 1920x1080x24
+          DISPLAY=:99 sudo python -m unittest discover
         displayName: "run tests"
 
   - job: Ubuntu20
