@@ -27,9 +27,9 @@ jobs:
   #
   # -----------------------------------------------------------------------
 
-  - job: Ubuntu16
+  - job: Ubuntu18
     pool:
-      vmImage: "ubuntu-16.04"  # Xenial
+      vmImage: "ubuntu-18.04"  # Bionic
     strategy:
       matrix:
         Py27-Rez:
@@ -59,7 +59,10 @@ jobs:
         displayName: "pip install bleeding-rez"
 
       - script: |
-          sudo apt-get install python-pyside
+          sudo apt-get install python-pyside.qtcore \
+                               python-pyside.qtgui \
+                               python-pyside.qtwidgets \
+                               python-pyside.qtsvg
           sudo python -c "from PySide import QtCore;print(QtCore.__version__)"
         condition: startsWith(variables['python.version'], '2.')
         displayName: "pip install PySide"
@@ -73,8 +76,7 @@ jobs:
         displayName: "Setup Xvfb"
 
       - script: |
-          xvfb-run --server-args="-screen 0 800x600x16" \
-                   sudo python -m unittest discover
+          xvfb-run sudo python -m unittest discover
         displayName: "run tests"
 
   - job: Ubuntu20
