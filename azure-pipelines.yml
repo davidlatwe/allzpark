@@ -61,7 +61,6 @@ jobs:
       - script: |
           sudo apt-get install python-pyside.qtcore \
                                python-pyside.qtgui \
-                               python-pyside.qtwidgets \
                                python-pyside.qtsvg
           sudo python -c "from PySide import QtCore;print(QtCore.__version__)"
         condition: startsWith(variables['python.version'], '2.')
