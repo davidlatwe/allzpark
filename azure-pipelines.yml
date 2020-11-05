@@ -73,7 +73,8 @@ jobs:
         displayName: "Setup Xvfb"
 
       - script: |
-          xvfb-run sudo python -m unittest discover
+          xvfb-run --server-args="-screen 0 800x600x16" \
+                   sudo python -m unittest discover
         displayName: "run tests"
 
   - job: Ubuntu20
