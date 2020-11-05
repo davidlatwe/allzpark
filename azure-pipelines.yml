@@ -72,7 +72,7 @@ jobs:
 
       - script: |
           sudo apt-get install xvfb
-          where xvfb-run
+          which xvfb-run
         displayName: "Setup Xvfb"
 
       - script: |
@@ -141,7 +141,7 @@ jobs:
 
       - script: |
           sudo apt-get install xvfb
-          where xvfb-run
+          which xvfb-run
         displayName: "Setup Xvfb"
 
       - script: |
