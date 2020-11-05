@@ -71,6 +71,7 @@ jobs:
         displayName: "pip install allzpark"
 
       - script: |
+          sudo apt-get install xserver-xorg-video-dummy x11-apps
           curl -o Xdummy http://www.karlrunge.com/x11vnc/Xdummy
           chmod +x Xdummy
         displayName: "Setup Xvfb"
