@@ -79,8 +79,8 @@ jobs:
 
       - script: |
           Xorg -noreset +extension GLX +extension RANDR +extension RENDER -logfile ./10.log -config ./xorg.conf :10
-          ./Xdummy :10 -geometry 1920x1080x24
-          DISPLAY=:10 sudo python -m unittest discover
+          sudo ./Xdummy :10 -geometry 1920x1080x24
+          sudo DISPLAY=:10 sudo python -m unittest discover
         displayName: "run tests"
 
   - job: Ubuntu20
