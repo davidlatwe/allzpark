@@ -54,7 +54,9 @@ jobs:
         displayName: "pip install rez (for API)"
 
       - script: |
-          sudo pip install bleeding-rez
+          git clone https://github.com/davidlatwe/rez.git -b bleeding-no-norm-path rez-src
+          cd rez-src
+          sudo pip install .
         condition: eq(variables['rez.project'], 'bleeding-rez')
         displayName: "pip install bleeding-rez"
 
@@ -125,7 +127,9 @@ jobs:
         displayName: "pip install rez (for API)"
 
       - script: |
-          sudo pip install bleeding-rez
+          git clone https://github.com/davidlatwe/rez.git -b bleeding-no-norm-path rez-src
+          cd rez-src
+          sudo pip install .
         condition: eq(variables['rez.project'], 'bleeding-rez')
         displayName: "pip install bleeding-rez"
 
@@ -178,7 +182,9 @@ jobs:
         displayName: "pip install rez (for API)"
 
       - script: |
-          pip install bleeding-rez
+          git clone https://github.com/davidlatwe/rez.git -b bleeding-no-norm-path rez-src
+          cd rez-src
+          sudo pip install .
         condition: eq(variables['rez.project'], 'bleeding-rez')
         displayName: "pip install bleeding-rez"
 
@@ -230,7 +236,9 @@ jobs:
         displayName: "pip install rez (for API)"
 
       - script: |
-          pip install bleeding-rez
+          git clone https://github.com/davidlatwe/rez.git -b bleeding-no-norm-path rez-src
+          cd rez-src
+          sudo pip install .
         condition: eq(variables['rez.project'], 'bleeding-rez')
         displayName: "pip install bleeding-rez"
 
