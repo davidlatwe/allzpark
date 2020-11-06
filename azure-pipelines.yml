@@ -184,7 +184,7 @@ jobs:
       - script: |
           git clone https://github.com/davidlatwe/rez.git -b bleeding-no-norm-path rez-src
           cd rez-src
-          sudo pip install .
+          pip install .
         condition: eq(variables['rez.project'], 'bleeding-rez')
         displayName: "pip install bleeding-rez"
 
@@ -238,7 +238,7 @@ jobs:
       - script: |
           git clone https://github.com/davidlatwe/rez.git -b bleeding-no-norm-path rez-src
           cd rez-src
-          sudo pip install .
+          pip install .
         condition: eq(variables['rez.project'], 'bleeding-rez')
         displayName: "pip install bleeding-rez"
 
