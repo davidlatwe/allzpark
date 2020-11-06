@@ -344,7 +344,7 @@ def main():
         if not handled:
             sys.__excepthook__(type, value, traceback)
 
-    sys.excepthook = excepthook
+    # sys.excepthook = excepthook
 
     with timings("- Loading themes.. "):
         resources.load_themes()

@@ -85,12 +85,15 @@ def windows_taskbar_compat():
             u"allzpark")
 
 
+_count = {"x": 0}
+
 if USE_THREADING:
     def defer(target,
               args=None,
               kwargs=None,
               on_success=lambda object: None,
-              on_failure=lambda exception: None):
+              on_failure=lambda exception: None,
+              parent=None):
         """Perform operation in thread with callback
 
         Arguments:
@@ -103,7 +106,7 @@ if USE_THREADING:
 
         """
 
-        thread = Thread(target, args, kwargs, on_success, on_failure)
+        thread = Thread(target, args, kwargs, on_success, on_failure, parent)
         thread.finished.connect(lambda: _threads.remove(thread))
         thread.start()
 
@@ -112,6 +115,8 @@ if USE_THREADING:
         # collect the thread before having had time to finish,
         # resulting in an exception.
         _threads.append(thread)
+        print(_count["x"], len(_threads))
+        _count["x"] += 1
 
         return thread
 
@@ -123,11 +128,13 @@ else:
               args=None,
               kwargs=None,
               on_success=lambda object: None,
-              on_failure=lambda exception: None):
+              on_failure=lambda exception, error: None,
+              parent=None):
         try:
             result = target(*(args or []), **(kwargs or {}))
         except Exception as e:
-            on_failure(e)
+            error = traceback.format_exc()
+            on_failure(e, error)
         else:
             on_success(result)
 
@@ -141,8 +148,9 @@ class Thread(QtCore.QThread):
                  args=None,
                  kwargs=None,
                  on_success=None,
-                 on_failure=None):
-        super(Thread, self).__init__()
+                 on_failure=None,
+                 parent=None):
+        super(Thread, self).__init__(parent)
 
         self.args = args or list()
         self.kwargs = kwargs or dict()

@@ -682,39 +682,43 @@ class TreeItem(dict):
 
     def __init__(self, data=None):
         super(TreeItem, self).__init__(data or {})
-        self._children = list()
-        self._parent = None
+        self["_children"] = list()
+        self["_parent"] = None
+
+    def __eq__(self, other):
+        return id(self) == id(other)
 
     def walk(self):
-        for i in self._children:
+        for i in self["_children"]:
             yield i
-        for i in self._children:
+        for i in self["_children"]:
             for j in i.walk():
                 yield j
 
     def row(self):
-        if self._parent is not None:
-            siblings = self.parent().children()
+        if self["_parent"] is not None:
+            siblings = self["_parent"].children()
             return siblings.index(self)
+        return -1
 
     def parent(self):
-        return self._parent
+        return self["_parent"]
 
     def child(self, row):
-        if row >= len(self._children):
+        if row >= len(self["_children"]):
             log.warning("Invalid row as child: {0}".format(row))
             return
-        return self._children[row]
+        return self["_children"][row]
 
     def children(self):
-        return self._children
+        return self["_children"]
 
     def childCount(self):
-        return len(self._children)
+        return len(self["_children"])
 
     def add_child(self, child):
-        child._parent = self
-        self._children.append(child)
+        child["_parent"] = self
+        self["_children"].append(child)
 
 
 class AbstractTreeModel(QtCore.QAbstractItemModel):

@@ -596,6 +596,8 @@ class Controller(QtCore.QObject):
         root = root or self._state["root"]
         assert root, "Tried resetting without a root, this is a bug"
 
+        self._state.to_booting()
+
         def do():
             profiles = dict()
             default_profile = None
@@ -649,13 +651,14 @@ class Controller(QtCore.QObject):
             self._state.to_ready()
             self.resetted.emit()
 
-        def _on_success():
+        def _on_success(result=None):
             profile = not self._state["profileName"]
 
             if profile:
                 self._state.to_noprofiles()
             else:
                 self.select_profile(profile)
+                # pass
 
             on_success()
 
@@ -672,11 +675,11 @@ class Controller(QtCore.QObject):
         # so that we can pick up new packages.
         rez.clear_caches()
 
-        self._state.to_booting()
         util.defer(
             do,
             on_success=_on_success,
-            on_failure=_on_failure
+            on_failure=_on_failure,
+            parent=self,
         )
 
     def patch(self, new):
@@ -789,7 +792,7 @@ class Controller(QtCore.QObject):
                 self.debug("Cleaning up..")
                 shutil.rmtree(tempdir)
 
-        def on_success(result):
+        def on_success(result=None):
             self.repository_changed.emit()
 
         def on_failure(error, trace):
@@ -797,7 +800,8 @@ class Controller(QtCore.QObject):
 
         util.defer(do,
                    on_success=on_success,
-                   on_failure=on_failure)
+                   on_failure=on_failure,
+                   parent=self)
 
     def delocalize(self, name):
         def do():
@@ -806,7 +810,7 @@ class Controller(QtCore.QObject):
             self.debug("Delocalizing %s" % package.root)
             localz.delocalize(package)
 
-        def on_success(result):
+        def on_success(result=None):
             self.repository_changed.emit()
 
         def on_failure(error, trace):
@@ -814,7 +818,8 @@ class Controller(QtCore.QObject):
 
         util.defer(do,
                    on_success=on_success,
-                   on_failure=on_failure)
+                   on_failure=on_failure,
+                   parent=self)
 
     def _localize_status(self, package):
         """Return status of localisation"""
@@ -951,6 +956,7 @@ class Controller(QtCore.QObject):
             args=[active_profile],
             on_success=on_apps_found,
             on_failure=on_apps_not_found,
+            parent=self,
         )
 
     def select_application(self, app_request):
