@@ -453,6 +453,7 @@ class String(QArgument):
 
     def create(self):
         widget = QtWidgets.QLineEdit()
+        # TODO: This setup emits changed signal twice
         widget.editingFinished.connect(self.onEditingFinished)
         widget.returnPressed.connect(widget.editingFinished.emit)
         self._read = lambda: widget.text()

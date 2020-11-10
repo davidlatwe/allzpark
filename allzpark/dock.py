@@ -1208,6 +1208,7 @@ class SlimTableView(QtWidgets.QTableView):
 
     def refresh(self):
         header = self.horizontalHeader()
+        # TODO: Improve header, maybe change to use Interactive
         QtCompat.setSectionResizeMode(
             header, self._stretch, QtWidgets.QHeaderView.Stretch)
 
