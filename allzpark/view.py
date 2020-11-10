@@ -20,10 +20,21 @@ class Applications(dock.SlimTableView):
 
     def __init__(self, ctrl, parent=None):
         super(Applications, self).__init__(parent)
-        self.setItemDelegate(delegates.Package(ctrl, self))
+        delegate = delegates.Package(ctrl, self)
+        self.setItemDelegate(delegate)
         self.setEditTriggers(self.EditKeyPressed)
         self.setStretch(1)
+
+        delegate.editor_created.connect(self.on_editor_created)
+        ctrl.resetted.connect(self.on_editor_committed)
+
         self._selected_app_ok = False
+
+    def on_editor_created(self):
+        self.selectionModel().blockSignals(True)
+
+    def on_editor_committed(self):
+        self.selectionModel().blockSignals(False)
 
     def on_state_appfailed(self):
         self._selected_app_ok = False

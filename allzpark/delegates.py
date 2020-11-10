@@ -2,6 +2,9 @@ from .vendor.Qt import QtWidgets, QtCore
 
 
 class Package(QtWidgets.QStyledItemDelegate):
+
+    editor_created = QtCore.Signal()
+
     def __init__(self, ctrl, parent=None):
         super(Package, self).__init__(parent)
         self._ctrl = ctrl
@@ -11,6 +14,7 @@ class Package(QtWidgets.QStyledItemDelegate):
             return
 
         editor = QtWidgets.QComboBox(parent)
+        self.editor_created.emit()
 
         return editor
 
