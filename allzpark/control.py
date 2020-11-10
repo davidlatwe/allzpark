@@ -191,7 +191,7 @@ class Controller(QtCore.QObject):
     profile_changed = QtCore.Signal(
         str, object, bool)  # profile, version, refreshed
 
-    application_changed = QtCore.Signal()
+    application_changed = QtCore.Signal(str)
 
     # The current command to launch an application has changed
     command_changed = QtCore.Signal(str)  # command
@@ -227,12 +227,11 @@ class Controller(QtCore.QObject):
         state = State(self, storage, parent_environ)
 
         models = {
-            "apps": model.ApplicationModel(self),
+            "resolved": model.ResolvedPackagesModel(self),
             "profileVersions": QtCore.QStringListModel(),
 
             # Docks
             "profiles": model.ProfileModel(),
-            "packages": model.PackagesModel(self),
             "context": model.ContextModel(),
             "environment": model.EnvironmentModel(),
             "parentenv": model.EnvironmentModel(),
@@ -353,9 +352,6 @@ class Controller(QtCore.QObject):
             else:
                 env[app_request] = environ
                 return environ
-
-    def resolved_packages(self, app_request):
-        return self._state["rezContexts"][app_request].resolved_packages
 
     # ----------------
     # Events
@@ -719,7 +715,7 @@ class Controller(QtCore.QObject):
                 rez_app.name, rez_app.version
             ))
 
-            app_model = self._models["apps"]
+            app_model = self._models["resolved"]
             app_index = app_model.findIndex(app_request)
 
             tool_name = kwargs.get(
@@ -734,8 +730,8 @@ class Controller(QtCore.QObject):
                 "This is a bug"
             )
 
-            overrides = self._models["packages"]._overrides
-            disabled = self._models["packages"]._disabled
+            overrides = self._models["resolved"].overrides
+            disabled = self._models["resolved"].disabled
             environ = self.parent_environ()
 
             self.debug(
@@ -810,7 +806,7 @@ class Controller(QtCore.QObject):
 
     def delocalize(self, name):
         def do():
-            item = self._models["packages"].find(name)
+            item = self._models["resolved"].find(name)
             package = item["package"]
             self.debug("Delocalizing %s" % package.root)
             localz.delocalize(package)
@@ -872,11 +868,10 @@ class Controller(QtCore.QObject):
     def select_profile(self, profile_name, version_name=Latest):
 
         # Wipe existing data
-        self._models["apps"].reset()
+        self._models["resolved"].reset()
         self._models["context"].reset()
         self._models["environment"].reset()
         self._models["diagnose"].reset()
-        self._models["packages"].reset()
         self._models["profileVersions"].setStringList([])
 
         self._state["rezContexts"].clear()
@@ -884,8 +879,8 @@ class Controller(QtCore.QObject):
         self._state["testedEnvirons"].clear()
         self._state["rezApps"].clear()
 
-        def on_apps_found(apps):
-            if not apps:
+        def on_apps_found(packages):
+            if not packages:
                 self._state["error"] = """
                 <h2><font color=\"red\">:(</font></h2>
                 <br>
@@ -905,7 +900,8 @@ class Controller(QtCore.QObject):
                 self._state.to_noapps()
 
             else:
-                self._models["apps"].reset(apps)
+                # get profile package
+                self._models["resolved"].reset(packages)
                 self._state.to_ready()
 
         def on_apps_not_found(error, trace):
@@ -924,6 +920,7 @@ class Controller(QtCore.QObject):
             active_profile = profile_versions[version_name]
 
             if profile_name:
+                # TODO: this warning pops-up even profile actually exists
                 self.warning("%s was not found" % profile_name)
             else:
                 self.error("select_profile was passed an empty string")
@@ -968,28 +965,25 @@ class Controller(QtCore.QObject):
         try:
             context = self.context(app_request)
             environ = self.environ(app_request)
-            packages = self.resolved_packages(app_request)
             diagnose = self._state["testedEnvirons"].get(app_request, {})
 
         except Exception:
-            self._models["packages"].reset()
             self._models["context"].reset()
             self._models["environment"].reset()
             self._models["diagnose"].reset()
             raise
 
-        self._models["packages"].reset(packages)
         self._models["context"].load(context.to_dict())
         self._models["environment"].load(environ)
         self._models["diagnose"].load(diagnose)
 
-        tools = self._models["apps"].find(app_request)["tools"]
+        tools = self._models["resolved"].find(app_request)["tools"]
         self._state["tool"] = tools[0]
 
         # Use this application on next launch or change of profile
         self.update_command()
         self._state.store("startupApplication", app_request)
-        self.application_changed.emit()
+        self.application_changed.emit(app_request)
 
         if context.success:
             self._state.to_appok()
@@ -1085,56 +1079,57 @@ class Controller(QtCore.QObject):
 
         # Optional patch
         patch = self._state.retrieve("patch", "").split()
+        patch_with_filter = self._state.retrieve("patchWithFilter", False)
         package_filter = self._package_filter()
+
+        app_ranges = dict()
+
+        def _try_finding_latest_app(req_str):
+            req_str = req_str.strip("~")
+            req = rez.PackageRequest(req_str)
+            app_ranges[req.name] = req.range
+            try:
+                return rez.find_latest(req.name, range_=req.range)
+            except _missing as e_:
+                self.error(str(e_))
+                return model.BrokenPackage(req_str)
+
+        def _try_resolve_context(req, pkg_name, mode):
+            kwargs = dict()
+            if mode == "Patch":
+                kwargs["use_filter"] = patch_with_filter
+            try:
+                return self.env(req, **kwargs)
+            except _missing as e_:
+                self.error("%s failed: %s" % (mode, str(e_)))
+                return model.BrokenContext(pkg_name, req)
+
+        _missing = (rez.PackageFamilyNotFoundError, rez.PackageNotFoundError)
 
         contexts = odict()
         with util.timing() as t:
 
             for app_request in apps:
-                request_str = app_request.strip("~")
-                app_request = rez.PackageRequest(request_str)
 
-                try:
-                    app_package = rez.find_latest(app_request.name,
-                                                  range_=app_request.range)
-                except (rez.PackageFamilyNotFoundError,
-                        rez.PackageNotFoundError) as err:
-                    self.error(str(err))
-                    app_package = model.BrokenPackage(request_str)
-                else:
-                    if package_filter.excludes(app_package):
-                        continue
+                app_package = _try_finding_latest_app(app_request)
+                if package_filter.excludes(app_package):
+                    continue
 
                 app_request = "%s==%s" % (app_package.name,
                                           app_package.version)
 
                 request = [qualified_profile_name, app_request]
                 self.debug("Resolving request: %s" % " ".join(request))
-
-                try:
-                    context = self.env(request)
-                except (rez.PackageFamilyNotFoundError,
-                        rez.PackageNotFoundError) as err:
-                    self.error("Resolve failed: %s" % str(err))
-                    context = model.BrokenContext(app_package.name,
-                                                  request)
+                context = _try_resolve_context(request,
+                                               app_package.name,
+                                               mode="Resolve")
 
                 if context.success and patch:
                     self.debug("Patching request: %s" % " ".join(patch))
                     request = context.get_patched_request(patch)
-
-                    try:
-                        context = self.env(
-                            request,
-                            use_filter=self._state.retrieve(
-                                "patchWithFilter", False
-                            )
-                        )
-                    except (rez.PackageFamilyNotFoundError,
-                            rez.PackageNotFoundError) as err:
-                        self.error("Patch failed: %s" % str(err))
-                        context = model.BrokenContext(app_package.name,
-                                                      request)
+                    context = _try_resolve_context(request,
+                                                   app_package.name,
+                                                   mode="Patch")
 
                     # update context key `app_request` if patched
                     for pkg in context.resolved_packages or []:
@@ -1189,10 +1184,16 @@ class Controller(QtCore.QObject):
 
             self._state["rezApps"][app_request] = rez_pkg
 
+        self._state["rezContexts"] = contexts
+
         self.debug("Resolved all contexts in %.2f seconds" % t.duration)
 
-        # Hide hidden
-        visible_apps = []
+        visible_apps = dict()
+
+        # * Opt-out hidden application
+        # * Find application versions
+        # * Context resolved packages (latest only)
+        paths = self._package_paths()
         show_hidden = self._state.retrieve("showHiddenApps")
         for request, package in self._state["rezApps"].items():
             data = allzparkconfig.metadata_from_package(package)
@@ -1201,9 +1202,23 @@ class Controller(QtCore.QObject):
             if hidden and not show_hidden:
                 continue
 
-            visible_apps += [package]
+            versions = rez.find(package.name,
+                                range_=app_ranges[package.name],
+                                paths=paths)
+            versions = sorted(
+                [str(v.version) for v in versions],
+                key=util.natural_keys
+            )
+            resolved_packages = [
+                pkg for pkg in contexts[request].resolved_packages
+                if pkg.name != package.name
+            ]
+            visible_apps[request] = {
+                "app": package,
+                "versions": versions,
+                "packages": resolved_packages,
+            }
 
-        self._state["rezContexts"] = contexts
         return visible_apps
 
     def graph(self):
