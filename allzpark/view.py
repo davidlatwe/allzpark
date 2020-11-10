@@ -26,15 +26,17 @@ class Applications(dock.SlimTableView):
         self.setStretch(1)
 
         delegate.editor_created.connect(self.on_editor_created)
-        ctrl.resetted.connect(self.on_editor_committed)
+        delegate.editor_closed.connect(self.on_editor_done)
+        ctrl.resetted.connect(lambda: self.on_editor_done(True))
 
         self._selected_app_ok = False
 
     def on_editor_created(self):
         self.selectionModel().blockSignals(True)
 
-    def on_editor_committed(self):
-        self.selectionModel().blockSignals(False)
+    def on_editor_done(self, changed):
+        if changed:
+            self.selectionModel().blockSignals(False)
 
     def on_state_appfailed(self):
         self._selected_app_ok = False
