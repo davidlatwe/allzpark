@@ -23,7 +23,7 @@ class Applications(dock.SlimTableView):
         delegate = delegates.Package(ctrl, self)
         self.setItemDelegate(delegate)
         self.setEditTriggers(self.EditKeyPressed)
-        self.setStretch(1)
+        self.setStretch(0)
 
         delegate.editor_created.connect(self.on_editor_created)
         delegate.editor_closed.connect(self.on_editor_done)
